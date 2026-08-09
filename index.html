@@ -1,0 +1,146 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="description" content="天地衍数：以三组数字起卦，借传统卦象观照过去、当下与未来。" />
+    <meta name="theme-color" content="#f3efe4" />
+    <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='8' fill='%23963c2f'/%3E%3Ctext x='32' y='45' text-anchor='middle' font-size='38' fill='white'%3E衍%3C/text%3E%3C/svg%3E" />
+    <title>天地衍数｜数字卦</title>
+    <link rel="stylesheet" href="./styles.css?v=20260808-10" />
+  </head>
+  <body>
+    <a class="skip-link" href="#cast">直接起卦</a>
+    <header class="topbar">
+      <a class="brand" href="#top" aria-label="天地衍数首页">
+        <span class="brand-seal" aria-hidden="true">衍</span>
+        <span><strong>天地衍数</strong><small>观数 · 察象 · 明势</small></span>
+      </a>
+      <nav aria-label="主导航">
+        <a href="#cast">起卦</a><a href="#method">方法</a><a href="#history">卦笺</a>
+      </nav>
+      <a class="top-action" href="#cast">开始起卦</a>
+    </header>
+
+    <main id="top">
+      <section class="intro-stage" aria-labelledby="intro-title">
+        <div class="hero-copy">
+          <p class="overline"><span></span> 数起于心，象见于时</p>
+          <h1 id="intro-title"><span>一念入数，</span><em>天地成象。</em></h1>
+          <p class="lead">默念一个具体问题，写下脑海中自然浮现的三组三位数。这里不替你决定，只把问题的结构与变化展开。</p>
+          <div class="trust"><span>道法自然</span><span>清静无为</span><span>天人合一</span></div>
+        </div>
+
+        <a class="scroll-cue" href="#coin-stage" aria-label="向下观象"><span>向下观象</span><i aria-hidden="true"></i></a>
+      </section>
+
+      <section class="coin-stage" id="coin-stage" aria-label="古钱观象">
+        <div class="coin-scene">
+        <div class="coin-wrap">
+          <span class="coin-real" aria-hidden="true"></span>
+          <p>一枚古钱，承接一次观照 <a href="https://collections.nmth.gov.tw/CollectionContent.aspx?a=132&amp;rno=2004.052.0018" target="_blank" rel="noreferrer">宝泉局制式 · 馆藏依据 ↗</a></p>
+        </div>
+
+          <a class="scroll-cue coin-cue" href="#cast" aria-label="继续向下起卦"><span>继续起卦</span><i aria-hidden="true"></i></a>
+        </div>
+      </section>
+
+      <section class="cast-stage" id="cast" aria-labelledby="cast-title">
+        <div class="cast-atmosphere" aria-hidden="true"><span>易</span><i></i></div>
+        <form id="oracle-form" class="cast-card" novalidate>
+          <div class="card-heading">
+            <div><span>起卦台</span><h2 id="cast-title">写下此刻所问</h2><p>问得其所，卦象方能指向关键</p></div>
+          </div>
+          <label class="question-field" for="question">
+            <span>问题 <small>选填，越具体越有帮助</small></span>
+            <textarea id="question" maxlength="100" rows="2" placeholder="例如：这次工作选择，我真正需要权衡的是什么？"></textarea>
+            <b><span id="question-count">0</span>/100</b>
+          </label>
+          <div class="question-mode" id="question-mode" data-category="general" aria-live="polite">
+            <span>问题识别</span><strong id="question-category">综合观照</strong><small id="question-structure">将按“处境 · 动点 · 路径”呈现</small>
+          </div>
+          <fieldset>
+            <legend>依次输入三组三位数</legend>
+            <div class="number-grid">
+              <label class="number-entry"><span>壹 · 下卦</span><input id="number-lower" inputmode="numeric" maxlength="3" autocomplete="off" placeholder="324" aria-describedby="number-error"/><small>除以 8 取余</small></label>
+              <label class="number-entry"><span>贰 · 上卦</span><input id="number-upper" inputmode="numeric" maxlength="3" autocomplete="off" placeholder="321" aria-describedby="number-error"/><small>除以 8 取余</small></label>
+              <label class="number-entry"><span>叁 · 动爻</span><input id="number-line" inputmode="numeric" maxlength="3" autocomplete="off" placeholder="678" aria-describedby="number-error"/><small>除以 6 取余</small></label>
+            </div>
+            <div class="entry-flow" aria-live="polite">
+              <span aria-hidden="true"><i></i><i></i><i></i></span>
+              <b id="entry-status">三数未定</b>
+            </div>
+          </fieldset>
+          <p class="error" id="number-error" role="alert"></p>
+          <div class="cast-actions">
+            <button class="primary" type="submit"><span class="idle">开始起卦 <b aria-hidden="true">→</b></span><span class="loading">正在排布六爻…</span></button>
+            <button class="secondary" id="random-button" type="button">随机取数</button>
+          </div>
+        </form>
+      </section>
+
+      <section class="result" id="result" hidden aria-live="polite">
+        <div class="result-top">
+          <div><p class="overline light"><span></span> 本卦 · <b id="result-index">第 00 卦</b></p><h2><span id="result-name">—</span><small>卦</small></h2><p id="result-pinyin">—</p><p class="result-question"><span>所问</span><b id="result-question">—</b></p></div>
+          <div class="hexagram-wrap">
+            <div class="hexagram" id="hexagram" aria-label="六爻卦象"></div>
+            <p class="casting-status" aria-live="polite"><i></i><span id="casting-status">六爻待排</span></p>
+          </div>
+          <div class="result-summary"><span id="result-theme">—</span><p id="result-reflection">—</p></div>
+        </div>
+
+        <div class="three-c">
+          <div class="section-title"><p>问题观照</p><h3 id="analysis-heading">处境 · 动点 · 路径</h3><span id="analysis-kicker">从当前事实走向可验证的一步</span></div>
+          <article data-reading-card="0"><span id="stage-label-0">处境底色</span><h4 id="past-title">—</h4><button class="focus-key" data-focus="0" type="button" aria-pressed="false"><span>本段重点</span><strong id="focus-key-0">—</strong></button><p id="past-copy">—</p></article>
+          <article data-reading-card="1"><span id="stage-label-1">正在变化</span><h4 id="present-title">—</h4><button class="focus-key" data-focus="1" type="button" aria-pressed="false"><span>本段重点</span><strong id="focus-key-1">—</strong></button><blockquote id="present-classic">—</blockquote><p id="present-copy">—</p></article>
+          <article data-reading-card="2"><span id="stage-label-2">行动路径</span><h4 id="future-title">—</h4><button class="focus-key" data-focus="2" type="button" aria-pressed="false"><span>本段重点</span><strong id="focus-key-2">—</strong></button><p id="future-copy">—</p></article>
+        </div>
+
+        <div class="derived">
+          <div class="section-title"><p>衍生分析</p><h3>因时察势</h3><span id="time-label">—</span></div>
+          <div class="derived-main"><p id="derived-copy">—</p><div class="path"><span>根源 <b id="path-root">—</b></span><i>→</i><span>走向 <b id="path-trend">—</b></span><i>→</i><span>路径 <b id="path-action">—</b></span></div></div>
+          <aside><strong>时令提示</strong><p id="season-note">—</p><small>农历日期由浏览器历法换算；流年、流月内容依据传统文化意象作辅助归纳，并非确定性预测，也不替代现实判断或专业意见。</small></aside>
+        </div>
+
+        <details class="calculation">
+          <summary>查看卦象结构与变化</summary>
+          <div class="symbol-route">
+            <p><span>内卦</span><b id="structure-lower">—</b><small>事情的内在根基</small></p>
+            <i aria-hidden="true">→</i>
+            <p><span>外卦</span><b id="structure-upper">—</b><small>眼前呈现的外部处境</small></p>
+            <i aria-hidden="true">→</i>
+            <p><span>动点</span><b id="structure-moving">—</b><small>变化最集中的位置</small></p>
+            <i aria-hidden="true">→</i>
+            <p><span>变象</span><b id="changed-name">—</b><small id="changed-theme">—</small></p>
+          </div>
+        </details>
+        <div class="result-actions"><button id="copy-button">复制解读</button><button id="share-card-button">生成卦象图片</button><button id="reset-button" class="solid">再起一卦</button></div>
+      </section>
+
+      <section class="method" id="method">
+        <div class="section-title"><p>方法公开</p><h3>三数定卦，规则如一</h3><span>保留旧版算法与六十四卦映射</span></div>
+        <div class="steps"><article><b>一</b><h4>定下卦</h4><p>第一组数字 ÷ 8，取余数；整除按 8 计。</p></article><article><b>二</b><h4>定上卦</h4><p>第二组数字 ÷ 8，取余数；整除按 8 计。</p></article><article><b>三</b><h4>定动爻</h4><p>第三组数字 ÷ 6，取余数；整除按 6 计。</p></article></div>
+        <div class="trigrams"><span>1 乾 ☰</span><span>2 兑 ☱</span><span>3 离 ☲</span><span>4 震 ☳</span><span>5 巽 ☴</span><span>6 坎 ☵</span><span>7 艮 ☶</span><span>8 坤 ☷</span></div>
+      </section>
+
+      <section class="history" id="history">
+        <div class="section-title"><p>本地卦笺</p><h3>最近六次观照</h3><span>仅保存在当前浏览器</span></div>
+        <div class="history-grid" id="history-grid"><p class="empty">还没有卦笺，完成第一次起卦后会显示在这里。</p></div>
+      </section>
+    </main>
+    <dialog class="share-dialog" id="share-dialog" aria-labelledby="share-dialog-title">
+      <div class="share-panel">
+        <header><div><span>卦象笺</span><h2 id="share-dialog-title">保存这一卦的重点</h2></div><button id="share-close" type="button" aria-label="关闭">×</button></header>
+        <canvas id="share-canvas" width="1080" height="1350" aria-label="卦象分享图片预览"></canvas>
+        <p class="share-note">图片只保留卦象与重点，不包含你的原问题。生成过程完全在本地完成。</p>
+        <p class="share-status" id="share-status" aria-live="polite"></p>
+        <div class="share-actions"><button id="share-download" class="solid" type="button">保存图片</button><button id="share-native" type="button">分享图片</button></div>
+      </div>
+    </dialog>
+    <footer><strong>天地衍数</strong><p>以传统文化为镜，以现实行动为尺。内容仅供文化体验与自我反思，不构成医疗、法律、投资等专业建议。</p><a href="#top">回到顶部 ↑</a></footer>
+    <script src="./assets/vendor/gsap.min.js?v=3.13.0" defer></script>
+    <script src="./assets/vendor/ScrollTrigger.min.js?v=3.13.0" defer></script>
+    <script src="./data/readings.bundle.js?v=20260808-1" defer></script>
+    <script src="./app.js?v=20260808-9" defer></script>
+  </body>
+</html>
