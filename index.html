@@ -112,16 +112,16 @@
           <fieldset>
             <legend>依次输入三组三位数</legend>
             <div class="number-grid">
-              <label class="number-entry"><span>壹 · 下卦</span><input id="number-lower" inputmode="numeric" maxlength="3" autocomplete="off" placeholder="324" aria-describedby="number-error"/><small>除以 8 取余</small></label>
-              <label class="number-entry"><span>贰 · 上卦</span><input id="number-upper" inputmode="numeric" maxlength="3" autocomplete="off" placeholder="321" aria-describedby="number-error"/><small>除以 8 取余</small></label>
-              <label class="number-entry"><span>叁 · 动爻</span><input id="number-line" inputmode="numeric" maxlength="3" autocomplete="off" placeholder="678" aria-describedby="number-error"/><small>除以 6 取余</small></label>
+              <label class="number-entry"><span>壹 · 下卦</span><input id="number-lower" inputmode="numeric" pattern="[0-9]*" enterkeyhint="next" maxlength="3" autocomplete="off" placeholder="324" aria-describedby="number-error"/><small>除以 8 取余</small></label>
+              <label class="number-entry"><span>贰 · 上卦</span><input id="number-upper" inputmode="numeric" pattern="[0-9]*" enterkeyhint="next" maxlength="3" autocomplete="off" placeholder="321" aria-describedby="number-error"/><small>除以 8 取余</small></label>
+              <label class="number-entry"><span>叁 · 动爻</span><input id="number-line" inputmode="numeric" pattern="[0-9]*" enterkeyhint="done" maxlength="3" autocomplete="off" placeholder="678" aria-describedby="number-error"/><small>除以 6 取余</small></label>
             </div>
             <div class="entry-flow" aria-live="polite">
               <span aria-hidden="true"><i></i><i></i><i></i></span>
               <b id="entry-status">三数未定</b>
             </div>
           </fieldset>
-          <p class="error" id="number-error" role="alert"></p>
+          <p class="error" id="number-error" role="alert" tabindex="-1"></p>
           <div class="cast-actions">
             <button class="primary" type="submit"><span class="idle">开始起卦 <b aria-hidden="true">→</b></span><span class="loading">正在排布六爻…</span></button>
             <button class="secondary" id="random-button" type="button">随机取数</button>
@@ -236,11 +236,11 @@
         </div>
       </section>
     </main>
-    <dialog class="share-dialog" id="share-dialog" aria-labelledby="share-dialog-title">
+    <dialog class="share-dialog" id="share-dialog" aria-labelledby="share-dialog-title" aria-describedby="share-note share-status">
       <div class="share-panel">
         <header><div><span>卦象笺</span><h2 id="share-dialog-title">保存这一卦的重点</h2></div><button id="share-close" type="button" aria-label="关闭">×</button></header>
         <canvas id="share-canvas" width="1080" height="1350" aria-label="卦象分享图片预览"></canvas>
-        <p class="share-note">图片只保留卦象与重点，不包含你的原问题。生成过程完全在本地完成。</p>
+        <p class="share-note" id="share-note">图片只保留卦象与重点，不包含你的原问题。生成过程完全在本地完成。</p>
         <p class="share-status" id="share-status" aria-live="polite"></p>
         <div class="share-actions"><button id="share-download" class="solid" type="button">保存图片</button><button id="share-native" type="button">分享图片</button></div>
       </div>

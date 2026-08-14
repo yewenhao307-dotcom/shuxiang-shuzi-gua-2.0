@@ -163,17 +163,20 @@ async function ensureReadings(){
     if(consumeBundledReadings())return true
     if(location.protocol==='file:')return loadBundledReadings()
     try{
-      const response=await fetch('./data/readings.json?v=20260808-1',{cache:'no-store'})
+      const controller=new AbortController(),timeout=window.setTimeout(()=>controller.abort(),12000)
+      let response
+      try{response=await fetch('./data/readings.json?v=20260808-1',{cache:'no-store',signal:controller.signal})}
+      finally{window.clearTimeout(timeout)}
       if(!response.ok)throw Error(`HTTP ${response.status}`)
       readings=await response.json();return true
     }catch(fetchError){return loadBundledReadings()}
-  })().then(ok=>{el.error.textContent='';return ok}).catch(error=>{console.error(error);readingsPromise=null;el.error.textContent='卦象资料未能加载。请确认本地网站仍在运行，然后刷新页面重试。';return false})
+  })().then(ok=>{el.error.textContent='';return ok}).catch(error=>{console.error(error);readingsPromise=null;el.error.textContent='卦象资料未能加载。请确认本地网站仍在运行，然后刷新页面重试。';el.error.focus({preventScroll:true});return false})
   return readingsPromise
 }
 function calculate(numbers){const n=numbers.map(Number);return{values:n,lower:n[0]%8||8,upper:n[1]%8||8,changingLine:n[2]%6||6}}
 function findReading(upper,lower){return readings.find(r=>r.upper_trigram===upper&&r.lower_trigram===lower)}
 function trigramFromLines(lines){return Number(Object.keys(TRIGRAMS).find(k=>TRIGRAMS[k].lines.join('')===lines.join('')))}
-function validate(numbers){let valid=true;el.entries.forEach((entry,i)=>{const bad=!/^\d{3}$/.test(numbers[i]);entry.classList.toggle('has-error',bad);valid&&=!bad});el.error.textContent=valid?'':'请完整输入三组三位数字，例如 324、321、678。';if(!valid)el.inputs.find(input=>!/^\d{3}$/.test(input.value))?.focus();return valid}
+function validate(numbers){let valid=true;el.entries.forEach((entry,i)=>{const bad=!/^\d{3}$/.test(numbers[i]);entry.classList.toggle('has-error',bad);el.inputs[i].setAttribute('aria-invalid',String(bad));valid&&=!bad});el.error.textContent=valid?'':'请完整输入三组三位数字，例如 324、321、678。';if(!valid)el.inputs.find(input=>!/^\d{3}$/.test(input.value))?.focus();return valid}
 
 function pulse(node,className,duration=280){if(reducedMotion.matches)return;node.classList.remove(className);requestAnimationFrame(()=>node.classList.add(className));window.setTimeout(()=>node.classList.remove(className),duration)}
 function refreshScrollMotion(){
@@ -198,18 +201,18 @@ function updateEntryState(){
 
 el.inputs.forEach((input,index)=>input.addEventListener('input',()=>{
   const entry=input.closest('.number-entry'),wasComplete=entry.classList.contains('is-complete')
-  input.value=input.value.replace(/\D/g,'').slice(0,3);entry.classList.remove('has-error');el.error.textContent='';updateEntryState()
+  input.value=input.value.replace(/\D/g,'').slice(0,3);entry.classList.remove('has-error');input.removeAttribute('aria-invalid');el.error.textContent='';updateEntryState()
   if(!wasComplete&&input.value.length===3){pulse(entry,'just-completed');if(el.inputs[index+1])el.inputs[index+1].focus();else pulse(el.primary,'ready-pulse',420)}
 }))
 el.question.addEventListener('input',()=>{el.questionCount.textContent=el.question.value.length;el.question.closest('.question-field').classList.toggle('has-content',Boolean(el.question.value.trim()));updateQuestionMode()})
 el.random.addEventListener('click',async()=>{
   if(casting)return
   const final=el.inputs.map(()=>String(Math.floor(Math.random()*900)+100)),originalText=el.random.textContent
-  el.random.classList.add('is-shuffling');el.random.textContent='数字流转…';el.entries.forEach(entry=>entry.classList.add('is-rolling'))
+  el.random.classList.add('is-shuffling');el.random.setAttribute('aria-busy','true');el.random.textContent='数字流转…';el.entries.forEach(entry=>entry.classList.add('is-rolling'))
   for(let i=0;i<7;i++){el.inputs.forEach(input=>input.value=String(Math.floor(Math.random()*900)+100));await wait(42)}
-  el.inputs.forEach((input,i)=>input.value=final[i]);el.entries.forEach(entry=>entry.classList.remove('is-rolling','has-error'));el.error.textContent='';updateEntryState();pulse(el.primary,'ready-pulse',420)
+  el.inputs.forEach((input,i)=>{input.value=final[i];input.removeAttribute('aria-invalid')});el.entries.forEach(entry=>entry.classList.remove('is-rolling','has-error'));el.error.textContent='';updateEntryState();pulse(el.primary,'ready-pulse',420)
   if(window.gsap&&!reducedMotion.matches)window.gsap.fromTo(el.entries,{y:4,scale:.992},{y:0,scale:1,duration:.24,ease:'power2.out',stagger:.035,overwrite:'auto',clearProps:'transform'})
-  el.random.textContent='数字已定';await wait(520);el.random.textContent=originalText;el.random.classList.remove('is-shuffling')
+  el.random.textContent='数字已定';await wait(520);el.random.textContent=originalText;el.random.classList.remove('is-shuffling');el.random.removeAttribute('aria-busy')
 })
 el.form.addEventListener('submit',async event=>{
   event.preventDefault();const values=el.inputs.map(i=>i.value)
@@ -217,7 +220,7 @@ el.form.addEventListener('submit',async event=>{
   try{await cast(values)}catch(error){
     console.error('起卦失败：',error)
     casting=false;el.form.classList.remove('is-casting');el.primary.removeAttribute('aria-busy')
-    el.error.textContent='起卦过程未能完成，请刷新页面后重试。'
+    el.error.textContent='起卦过程未能完成，请刷新页面后重试。';el.error.focus({preventScroll:true})
   }
 })
 
@@ -407,7 +410,7 @@ async function cast(numbers,{save=true,scroll=true}={}){
   if(casting)return;casting=true;el.form.classList.add('is-casting');el.primary.setAttribute('aria-busy','true');el.result.hidden=true
   if(!await ensureReadings()){casting=false;el.form.classList.remove('is-casting');el.primary.removeAttribute('aria-busy');return}
   const calculation=calculate(numbers),lower=TRIGRAMS[calculation.lower],upper=TRIGRAMS[calculation.upper],lines=[...lower.lines,...upper.lines],reading=findReading(calculation.upper,calculation.lower)
-  if(!reading){el.error.textContent='没有找到对应卦象，请检查本地资料。';casting=false;el.form.classList.remove('is-casting');el.primary.removeAttribute('aria-busy');return}
+  if(!reading){el.error.textContent='没有找到对应卦象，请检查本地资料。';el.error.focus({preventScroll:true});casting=false;el.form.classList.remove('is-casting');el.primary.removeAttribute('aria-busy');return}
   await wait(220)
   const changedLines=[...lines];changedLines[calculation.changingLine-1]=changedLines[calculation.changingLine-1]?0:1
   const changedLower=trigramFromLines(changedLines.slice(0,3)),changedUpper=trigramFromLines(changedLines.slice(3)),changedReading=findReading(changedUpper,changedLower)
@@ -447,8 +450,9 @@ function setReadingCard(index,{animate=true,focus=false}={}){
     if(window.gsap&&animate&&!reducedMotion.matches)window.gsap.to(card,{...target,duration:.34,ease:'power3.out',overwrite:'auto'})
     else Object.assign(card.style,{transform:`translate(${x}px,${y}px) rotate(${rotation}deg) scale(${scale})`,opacity:String(target.opacity),zIndex:String(target.zIndex)})
   })
-  $$('.reading-visual').forEach((visual,i)=>visual.classList.toggle('is-active',i===readingCardIndex))
-  $$('.deck-dots button').forEach((dot,i)=>{dot.classList.toggle('is-active',i===readingCardIndex);dot.setAttribute('aria-selected',String(i===readingCardIndex))})
+  $('#reading-deck')?.setAttribute('aria-activedescendant',cards[readingCardIndex]?.id||'')
+  $$('.reading-visual').forEach((visual,i)=>{const active=i===readingCardIndex;visual.classList.toggle('is-active',active);visual.setAttribute('aria-hidden',String(!active));visual.hidden=!active})
+  $$('.deck-dots button').forEach((dot,i)=>{const active=i===readingCardIndex;dot.classList.toggle('is-active',active);dot.setAttribute('aria-selected',String(active));dot.tabIndex=active?0:-1})
   const counter=$('#deck-current');if(counter)counter.textContent=String(readingCardIndex+1).padStart(2,'0')
   const activeCard=cards[readingCardIndex];if(activeCard&&animate&&!reducedMotion.matches){activeCard.classList.remove('is-refracting');void activeCard.offsetWidth;activeCard.classList.add('is-refracting');setTimeout(()=>activeCard.classList.remove('is-refracting'),520)}
   if(focus)cards[readingCardIndex]?.focus({preventScroll:true})
@@ -457,8 +461,10 @@ function clampDeckSpacing(){return Math.max(116,Math.min(204,window.innerWidth*.
 function initReadingDeck(){
   const deck=$('#reading-deck'),cards=$$('.reading-card'),dots=$('.deck-dots');if(!deck||!cards.length)return
   const labels=cards.map(card=>card.querySelector('h4')?.textContent||'解读')
-  dots.innerHTML=cards.map((_,i)=>`<button type="button" role="tab" aria-label="${labels[i]}" title="${labels[i]}"><span></span></button>`).join('')
-  cards.forEach((card,index)=>{card.setAttribute('role','option');card.setAttribute('aria-label',labels[index]);card.addEventListener('click',()=>setReadingCard(index));card.addEventListener('focus',()=>{if(index!==readingCardIndex)setReadingCard(index,{focus:false})});card.addEventListener('pointerenter',()=>{if(card.classList.contains('is-active')&&!reducedMotion.matches)card.classList.add('is-lit')});card.addEventListener('pointermove',event=>{if(reducedMotion.matches||event.pointerType==='touch')return;const rect=card.getBoundingClientRect(),x=(event.clientX-rect.left)/rect.width*100,y=(event.clientY-rect.top)/rect.height*100;card.style.setProperty('--glass-x',`${x.toFixed(1)}%`);card.style.setProperty('--glass-y',`${y.toFixed(1)}%`)});card.addEventListener('pointerleave',()=>{card.classList.remove('is-lit');card.style.removeProperty('--glass-x');card.style.removeProperty('--glass-y')})})
+  dots.innerHTML=cards.map((_,i)=>`<button type="button" id="reading-tab-${i}" role="tab" aria-controls="reading-panel-${i}" aria-label="${labels[i]}" title="${labels[i]}"><span></span></button>`).join('')
+  const visuals=$$('.reading-visual')
+  visuals.forEach((visual,index)=>{visual.id=`reading-panel-${index}`;visual.setAttribute('role','tabpanel');visual.setAttribute('aria-labelledby',`reading-tab-${index}`)})
+  cards.forEach((card,index)=>{card.id=`reading-option-${index}`;card.setAttribute('role','option');card.setAttribute('aria-label',labels[index]);card.setAttribute('aria-posinset',String(index+1));card.setAttribute('aria-setsize',String(cards.length));card.addEventListener('click',()=>setReadingCard(index));card.addEventListener('focus',()=>{if(index!==readingCardIndex)setReadingCard(index,{focus:false})});card.addEventListener('pointerenter',()=>{if(card.classList.contains('is-active')&&!reducedMotion.matches)card.classList.add('is-lit')});card.addEventListener('pointermove',event=>{if(reducedMotion.matches||event.pointerType==='touch')return;const rect=card.getBoundingClientRect(),x=(event.clientX-rect.left)/rect.width*100,y=(event.clientY-rect.top)/rect.height*100;card.style.setProperty('--glass-x',`${x.toFixed(1)}%`);card.style.setProperty('--glass-y',`${y.toFixed(1)}%`)});card.addEventListener('pointerleave',()=>{card.classList.remove('is-lit');card.style.removeProperty('--glass-x');card.style.removeProperty('--glass-y')})})
   $$('.deck-dots button').forEach((dot,index)=>dot.addEventListener('click',()=>setReadingCard(index,{focus:true})))
   $('.deck-prev').addEventListener('click',()=>setReadingCard(readingCardIndex-1,{focus:true}));$('.deck-next').addEventListener('click',()=>setReadingCard(readingCardIndex+1,{focus:true}))
   deck.addEventListener('keydown',event=>{if(['ArrowLeft','ArrowRight','Home','End'].includes(event.key)){event.preventDefault();const target=event.key==='Home'?0:event.key==='End'?cards.length-1:readingCardIndex+(event.key==='ArrowRight'?1:-1);setReadingCard(target,{focus:true})}})
@@ -472,6 +478,7 @@ function initReadingDeck(){
 }
 
 const shareDialog=$('#share-dialog'),shareCanvas=$('#share-canvas'),shareStatus=$('#share-status')
+let shareReturnFocus=null,shareCloseTimer=0
 function roundedRect(ctx,x,y,width,height,radius){
   const r=Math.min(radius,width/2,height/2);ctx.beginPath();ctx.moveTo(x+r,y);ctx.arcTo(x+width,y,x+width,y+height,r);ctx.arcTo(x+width,y+height,x,y+height,r);ctx.arcTo(x,y+height,x,y,r);ctx.arcTo(x,y,x+width,y,r);ctx.closePath()
 }
@@ -505,16 +512,17 @@ function drawShareCard(result){
 function canvasBlob(){return new Promise((resolve,reject)=>shareCanvas.toBlob(blob=>blob?resolve(blob):reject(Error('图片生成失败')),'image/png'))}
 function downloadBlob(blob,name){const url=URL.createObjectURL(blob),link=document.createElement('a');link.href=url;link.download=name;link.click();setTimeout(()=>URL.revokeObjectURL(url),1200)}
 function shareFileName(){return `天地衍数-${current?.reading.name||'卦象'}.png`}
-function closeShareDialog(){if(!shareDialog?.open)return;shareDialog.classList.remove('is-open');setTimeout(()=>shareDialog.close(),180)}
-$('#share-card-button').addEventListener('click',async()=>{if(!current)return;await document.fonts?.ready;drawShareCard(current);shareStatus.textContent='';shareDialog.showModal();requestAnimationFrame(()=>shareDialog.classList.add('is-open'))})
+function closeShareDialog(){if(!shareDialog?.open)return;shareDialog.classList.remove('is-open');window.clearTimeout(shareCloseTimer);shareCloseTimer=window.setTimeout(()=>{shareDialog.close();if(shareReturnFocus?.isConnected)shareReturnFocus.focus({preventScroll:true});shareReturnFocus=null},180)}
+$('#share-card-button').addEventListener('click',async event=>{if(!current)return;const button=event.currentTarget;button.setAttribute('aria-busy','true');try{await document.fonts?.ready;drawShareCard(current);shareStatus.textContent='';shareReturnFocus=document.activeElement;shareDialog.showModal();requestAnimationFrame(()=>{shareDialog.classList.add('is-open');$('#share-close').focus({preventScroll:true})})}finally{button.removeAttribute('aria-busy')}})
 $('#share-close').addEventListener('click',closeShareDialog)
 shareDialog.addEventListener('cancel',event=>{event.preventDefault();closeShareDialog()})
 shareDialog.addEventListener('click',event=>{if(event.target===shareDialog)closeShareDialog()})
+window.addEventListener('pagehide',()=>window.clearTimeout(shareCloseTimer),{once:true})
 $('#share-download').addEventListener('click',async()=>{try{const blob=await canvasBlob();downloadBlob(blob,shareFileName());shareStatus.textContent='图片已保存'}catch{shareStatus.textContent='图片未能生成，请重试'}})
 $('#share-native').addEventListener('click',async()=>{try{const blob=await canvasBlob(),file=new File([blob],shareFileName(),{type:'image/png'});if(navigator.share&&navigator.canShare?.({files:[file]})){await navigator.share({title:`${current.reading.name}卦 · ${current.reading.theme}`,files:[file]});shareStatus.textContent='分享面板已打开'}else{downloadBlob(blob,shareFileName());shareStatus.textContent='当前浏览器不支持直接分享，已改为保存图片'}}catch(error){if(error?.name!=='AbortError')shareStatus.textContent='分享未完成，可选择保存图片'}})
 
 $('#copy-button').addEventListener('click',async event=>{if(!current)return;const button=event.currentTarget;try{await navigator.clipboard.writeText(resultText(current));button.textContent='已复制 ✓';button.classList.add('is-success');setTimeout(()=>{button.textContent='复制解读';button.classList.remove('is-success')},1400)}catch{button.textContent='复制失败';button.classList.add('is-failed');setTimeout(()=>{button.textContent='复制解读';button.classList.remove('is-failed')},1400)}})
-$('#reset-button').addEventListener('click',async()=>{current=null;el.result.classList.add('is-leaving');await wait(180);el.result.hidden=true;el.result.classList.remove('is-leaving','is-revealed');el.form.reset();el.questionCount.textContent='0';el.question.closest('.question-field').classList.remove('has-content');updateQuestionMode();el.error.textContent='';el.entries.forEach(e=>e.classList.remove('has-error','is-complete'));updateEntryState();refreshScrollMotion();$('#cast').scrollIntoView({behavior:'smooth'});await wait(260);el.inputs[0].focus()})
+$('#reset-button').addEventListener('click',async()=>{current=null;el.result.classList.add('is-leaving');await wait(180);el.result.hidden=true;el.result.classList.remove('is-leaving','is-revealed');el.form.reset();el.questionCount.textContent='0';el.question.closest('.question-field').classList.remove('has-content');updateQuestionMode();el.error.textContent='';el.inputs.forEach(input=>input.removeAttribute('aria-invalid'));el.entries.forEach(e=>e.classList.remove('has-error','is-complete'));updateEntryState();refreshScrollMotion();$('#cast').scrollIntoView({behavior:'smooth'});await wait(260);el.inputs[0].focus()})
 
 function loadHistory(){try{return JSON.parse(localStorage.getItem(HISTORY_KEY)||'[]')}catch{return[]}}
 function saveHistory(result){const compact={timestamp:result.timestamp,question:result.question,numbers:result.numbers,id:result.reading.id,name:result.reading.name,theme:result.reading.theme};const history=[compact,...loadHistory().filter(i=>i.numbers.join()!=compact.numbers.join())].slice(0,6);localStorage.setItem(HISTORY_KEY,JSON.stringify(history));renderHistory()}
