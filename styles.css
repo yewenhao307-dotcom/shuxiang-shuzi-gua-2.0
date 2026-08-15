@@ -1575,3 +1575,42 @@ footer p{color:rgba(251,246,232,.72)}footer a{color:var(--silk-base)}
   }
   .reading-card.is-active p{padding-bottom:18px}
 }
+
+/* 6.5 Mobile legibility and compact result flow. Desktop composition is unchanged. */
+.deck-swipe-hint{display:none}
+@media(max-width:700px){
+  .hero-note-copy span{font-size:11px}
+  .hero-note-copy span:first-child{font-size:12px}
+  .hero-trust-mobile{font-size:11px;letter-spacing:.08em}
+  .coin-stage .coin-wrap p,.coin-note{font-size:11px}
+  .question-field>span small,
+  .question-mode>span,.question-mode>strong,.question-mode>small,
+  .number-entry>span,.entry-flow b{font-size:11px}
+  .contact-kicker,.contact-mail span,.social-item small,.social-block>p{font-size:11px}
+  footer p{font-size:11.5px;line-height:1.75}
+  footer a{font-size:12px}
+
+  .result-top{
+    padding:20px 16px 12px;
+    column-gap:14px;
+    row-gap:12px
+  }
+  .result-question{margin-top:9px!important;padding-top:9px;font-size:12px!important;line-height:1.65}
+  .result-summary{padding-top:13px}
+  .result-summary p{margin-top:9px;font-size:12.5px;line-height:1.68;text-wrap:pretty}
+  .reading-deck{padding:8px 14px 28px}
+  .deck-swipe-hint{
+    display:flex;align-items:center;justify-content:space-between;
+    margin:0 2px 8px;color:#a79d91;font:500 11px/1.4 "Noto Sans SC","Microsoft YaHei",sans-serif;
+    letter-spacing:.04em
+  }
+  .deck-swipe-hint b{color:#d2ab76;font-weight:500}
+  .deck-stage{height:calc(min(238px,68vw) * 16 / 9 + 22px)}
+  .reading-card{
+    top:5px;width:min(238px,68vw);margin-left:max(-119px,-34vw);
+    padding:23px 20px;border-radius:26px
+  }
+  .reading-card h4{font-size:24px}
+  .reading-card small,.reading-card strong,.reading-card p{font-size:12px}
+  .deck-navigation{margin-top:0;margin-bottom:20px}
+}

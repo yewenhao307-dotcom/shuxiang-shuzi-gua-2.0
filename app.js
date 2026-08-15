@@ -575,11 +575,23 @@ function initReadingDeck(){
   $$('.deck-dots button').forEach((dot,index)=>dot.addEventListener('click',()=>setReadingCard(index,{focus:true})))
   $('.deck-prev').addEventListener('click',()=>setReadingCard(readingCardIndex-1,{focus:true}));$('.deck-next').addEventListener('click',()=>setReadingCard(readingCardIndex+1,{focus:true}))
   deck.addEventListener('keydown',event=>{if(['ArrowLeft','ArrowRight','Home','End'].includes(event.key)){event.preventDefault();const target=event.key==='Home'?0:event.key==='End'?cards.length-1:readingCardIndex+(event.key==='ArrowRight'?1:-1);setReadingCard(target,{focus:true})}})
-  let startX=null,dragX=0
-  deck.addEventListener('pointerdown',event=>{if(event.target.closest('.reading-card.is-active p,.reading-card.is-active strong')||(event.pointerType!=='mouse'&&event.target.closest('.reading-card.is-active')))return;if(event.pointerType==='mouse'&&event.button!==0)return;startX=event.clientX;dragX=0;deck.classList.add('is-dragging');deck.setPointerCapture?.(event.pointerId)})
-  deck.addEventListener('pointermove',event=>{if(startX===null||reducedMotion.matches)return;dragX=Math.max(-86,Math.min(86,event.clientX-startX));cards.forEach((card,cardIndex)=>{const distance=deckDistance(cardIndex,readingCardIndex,cards.length),abs=Math.abs(distance);if(abs>2)return;const x=distance*clampDeckSpacing()+dragX*.42,rotation=distance*1.35+dragX*.018;window.gsap?.set(card,{x,rotation})})})
-  const finishDrag=event=>{if(startX===null)return;deck.releasePointerCapture?.(event.pointerId);deck.classList.remove('is-dragging');const delta=dragX;startX=null;dragX=0;if(Math.abs(delta)>38){navigator.vibrate?.(8);setReadingCard(readingCardIndex+(delta<0?1:-1))}else setReadingCard(readingCardIndex)}
-  deck.addEventListener('pointerup',finishDrag);deck.addEventListener('pointercancel',finishDrag)
+  let startX=null,startY=null,dragX=0,dragAxis=null
+  const clearDrag=()=>{startX=null;startY=null;dragX=0;dragAxis=null;deck.classList.remove('is-dragging')}
+  deck.addEventListener('pointerdown',event=>{if(event.pointerType==='mouse'&&event.button!==0)return;startX=event.clientX;startY=event.clientY;dragX=0;dragAxis=null})
+  deck.addEventListener('pointermove',event=>{
+    if(startX===null||reducedMotion.matches)return
+    const deltaX=event.clientX-startX,deltaY=event.clientY-startY
+    if(!dragAxis){
+      if(Math.max(Math.abs(deltaX),Math.abs(deltaY))<8)return
+      if(Math.abs(deltaY)>Math.abs(deltaX)*1.15){clearDrag();return}
+      dragAxis='x';deck.classList.add('is-dragging');deck.setPointerCapture?.(event.pointerId)
+    }
+    if(dragAxis!=='x')return
+    event.preventDefault();dragX=Math.max(-86,Math.min(86,deltaX))
+    cards.forEach((card,cardIndex)=>{const distance=deckDistance(cardIndex,readingCardIndex,cards.length),abs=Math.abs(distance);if(abs>2)return;const x=distance*clampDeckSpacing()+dragX*.42,rotation=distance*1.35+dragX*.018;window.gsap?.set(card,{x,rotation})})
+  })
+  const finishDrag=(event,cancelled=false)=>{if(startX===null)return;const delta=dragX,wasHorizontal=dragAxis==='x';if(deck.hasPointerCapture?.(event.pointerId))deck.releasePointerCapture(event.pointerId);clearDrag();if(!cancelled&&wasHorizontal&&Math.abs(delta)>38){navigator.vibrate?.(8);setReadingCard(readingCardIndex+(delta<0?1:-1))}else if(wasHorizontal)setReadingCard(readingCardIndex)}
+  deck.addEventListener('pointerup',event=>finishDrag(event));deck.addEventListener('pointercancel',event=>finishDrag(event,true))
   let resizeFrame=0;window.addEventListener('resize',()=>{cancelAnimationFrame(resizeFrame);resizeFrame=requestAnimationFrame(()=>setReadingCard(readingCardIndex,{animate:false}))})
   setReadingCard(0,{animate:false})
 }
