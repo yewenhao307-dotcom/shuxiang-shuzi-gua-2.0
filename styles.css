@@ -682,6 +682,10 @@ body{overflow-x:hidden}
   .talisman-image,.talisman-dither{transition:none!important;filter:none!important;transform:none!important}
 }
 
+/* Non-visual interaction safeguards: preserve layout while improving touch input. */
+button,a,input,textarea,select,[role="button"]{touch-action:manipulation}
+.scroll-cue::before{content:"";position:absolute;inset:-12px -22px}
+
 /* 4.1 Runtime-safe reveal and more legible optical glass */
 .cast-stage{
   background:

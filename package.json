@@ -1,6 +1,10 @@
 {
   "name": "tiandi-yanshu",
   "private": true,
+  "scripts": {
+    "test": "npm run test:intent",
+    "test:intent": "node scripts/test-question-intent.mjs"
+  },
   "dependencies": {
     "motion": "^13.0.0",
     "three": "0.180.0"

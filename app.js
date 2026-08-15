@@ -152,8 +152,15 @@ function loadBundledReadings(){
   return new Promise((resolve,reject)=>{
     const script=document.createElement('script')
     script.src='./data/readings.bundle.js?v=20260808-1';script.async=true;script.dataset.readingsFallback=''
-    script.onload=()=>consumeBundledReadings()?resolve(true):reject(Error('Bundled readings are empty'))
-    script.onerror=()=>reject(Error('Bundled readings failed to load'))
+    let settled=false
+    const finish=(ok,error)=>{
+      if(settled)return
+      settled=true;window.clearTimeout(timeout);script.remove()
+      ok?resolve(true):reject(error)
+    }
+    const timeout=window.setTimeout(()=>finish(false,Error('Bundled readings timed out')),15000)
+    script.onload=()=>finish(consumeBundledReadings(),Error('Bundled readings are empty'))
+    script.onerror=()=>finish(false,Error('Bundled readings failed to load'))
     document.head.append(script)
   })
 }
@@ -380,10 +387,10 @@ function extractQuestionIntentText(question=''){
 }
 function classifyQuestionDetails(question=''){
   const text=extractQuestionIntentText(question);if(!text)return'general'
-  const terminalIntent=QUESTION_TERMINAL_INTENTS.find(signal=>signal.pattern.test(text))
-  if(terminalIntent)return{category:terminalIntent.key,focusText:text,confidence:.99,reason:'terminal-intent',scores:[]}
   const strongCoreIntent=QUESTION_STRONG_CORE_INTENTS.find(signal=>signal.pattern.test(text))
   if(strongCoreIntent)return{category:strongCoreIntent.key,focusText:text,confidence:.98,reason:'strong-core-intent',scores:[]}
+  const terminalIntent=QUESTION_TERMINAL_INTENTS.find(signal=>signal.pattern.test(text))
+  if(terminalIntent)return{category:terminalIntent.key,focusText:text,confidence:.99,reason:'terminal-intent',scores:[]}
   const domains=['relationship','resources','career','study','wellbeing','decision'],scores=domains.map((key,index)=>{
     const markerScore=(QUESTION_MARKERS[key]||[]).reduce((sum,marker)=>sum+(text.includes(marker)?Math.max(1,marker.length-1):0),0)
     const contextScore=(QUESTION_CONTEXT_SIGNALS[key]||[]).reduce((sum,signal)=>sum+(signal.pattern.test(text)?signal.weight:0),0)

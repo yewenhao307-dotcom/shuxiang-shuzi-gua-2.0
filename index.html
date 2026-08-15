@@ -104,7 +104,7 @@
           </div>
           <label class="question-field" for="question">
             <span>问题 <small>选填，越具体越有帮助</small></span>
-            <textarea id="question" maxlength="100" rows="2" placeholder="例如：这次工作选择，我真正需要权衡的是什么？"></textarea>
+            <textarea id="question" name="question" maxlength="100" rows="2" autocomplete="off" placeholder="例如：这次工作选择，我真正需要权衡的是什么？"></textarea>
             <b><span id="question-count">0</span>/100</b>
           </label>
           <div class="question-mode" id="question-mode" data-category="general" aria-live="polite">
@@ -113,9 +113,9 @@
           <fieldset>
             <legend>依次输入三组三位数</legend>
             <div class="number-grid">
-              <label class="number-entry"><span>壹 · 下卦</span><input id="number-lower" inputmode="numeric" pattern="[0-9]*" enterkeyhint="next" maxlength="3" autocomplete="off" placeholder="324" aria-describedby="number-error"/><small>除以 8 取余</small></label>
-              <label class="number-entry"><span>贰 · 上卦</span><input id="number-upper" inputmode="numeric" pattern="[0-9]*" enterkeyhint="next" maxlength="3" autocomplete="off" placeholder="321" aria-describedby="number-error"/><small>除以 8 取余</small></label>
-              <label class="number-entry"><span>叁 · 动爻</span><input id="number-line" inputmode="numeric" pattern="[0-9]*" enterkeyhint="done" maxlength="3" autocomplete="off" placeholder="678" aria-describedby="number-error"/><small>除以 6 取余</small></label>
+              <label class="number-entry"><span>壹 · 下卦</span><input id="number-lower" name="lower-number" inputmode="numeric" pattern="[0-9]*" enterkeyhint="next" maxlength="3" autocomplete="off" placeholder="324" aria-describedby="number-error"/><small>除以 8 取余</small></label>
+              <label class="number-entry"><span>贰 · 上卦</span><input id="number-upper" name="upper-number" inputmode="numeric" pattern="[0-9]*" enterkeyhint="next" maxlength="3" autocomplete="off" placeholder="321" aria-describedby="number-error"/><small>除以 8 取余</small></label>
+              <label class="number-entry"><span>叁 · 动爻</span><input id="number-line" name="changing-number" inputmode="numeric" pattern="[0-9]*" enterkeyhint="done" maxlength="3" autocomplete="off" placeholder="678" aria-describedby="number-error"/><small>除以 6 取余</small></label>
             </div>
             <div class="entry-flow" aria-live="polite">
               <span aria-hidden="true"><i></i><i></i><i></i></span>
