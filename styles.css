@@ -1614,3 +1614,185 @@ footer p{color:rgba(251,246,232,.72)}footer a{color:var(--silk-base)}
   .reading-card small,.reading-card strong,.reading-card p{font-size:12px}
   .deck-navigation{margin-top:0;margin-bottom:20px}
 }
+
+/* 6.6 Mobile route hierarchy and low-height landscape composition. */
+@media(max-width:700px){
+  .topbar nav a:first-child{
+    min-width:54px;
+    min-height:36px;
+    margin-right:2px;
+    padding:0 10px;
+    border:1px solid rgba(91,42,42,.72);
+    border-radius:999px;
+    background:var(--rosewood);
+    color:var(--silk-light);
+    box-shadow:0 8px 20px rgba(62,27,29,.14)
+  }
+  .topbar nav a:first-child::after{display:none}
+  .topbar nav a:first-child:active{transform:scale(.96)}
+}
+
+@media(max-width:900px) and (orientation:landscape) and (max-height:520px){
+  .topbar{
+    height:58px;
+    padding:0 max(20px,env(safe-area-inset-right)) 0 max(20px,env(safe-area-inset-left));
+    background:rgba(251,246,232,.96)
+  }
+  .brand{gap:9px}
+  .brand-seal{width:34px;height:34px;font-size:16px}
+  .brand strong{font-size:19px}
+  .brand small{display:none}
+  .topbar nav{gap:8px}
+  .topbar nav a{min-height:40px;padding:0 9px;font-size:13px}
+  .top-action{min-height:38px;padding:7px 18px;font-size:13px}
+
+  .intro-stage{
+    min-height:calc(100svh - 58px);
+    height:calc(100svh - 58px);
+    padding:16px 28px 54px
+  }
+  .intro-stage>.hero-liquid{inset:-12% -5% -8%;opacity:.58}
+  .hero-liquid::after{inset:70% 0 0}
+  .intro-stage .hero-copy{height:210px}
+  .intro-stage .hero-copy h1{
+    inset:-6px 0 auto;
+    width:auto;
+    max-width:none;
+    transform:none;
+    display:block;
+    color:var(--wood-ink);
+    font-family:"Songti SC","Noto Serif SC","STSong","SimSun",serif;
+    font-size:clamp(66px,11vw,94px);
+    font-weight:800;
+    font-synthesis:none;
+    line-height:.8;
+    letter-spacing:-.085em
+  }
+  .intro-stage .hero-copy h1 span,
+  .intro-stage .hero-copy h1 em{
+    display:block;
+    width:max-content;
+    writing-mode:horizontal-tb;
+    text-orientation:mixed;
+    white-space:nowrap
+  }
+  .intro-stage .hero-copy h1 span{margin-left:8vw}
+  .intro-stage .hero-copy h1 em{margin:0 0 0 29vw}
+
+  .hero-note{
+    bottom:20px;
+    width:190px;
+    height:72px;
+    min-height:72px;
+    padding:3px 6px
+  }
+  .hero-note-left{left:22px;justify-content:flex-end}
+  .hero-note-right{right:22px;display:flex;justify-content:flex-start}
+  .hero-note-copy{gap:6px}
+  .hero-note-copy span{font-size:9px;letter-spacing:.07em}
+  .hero-note-copy span:first-child{font-size:10px}
+  .hero-note-copy span:nth-child(2),
+  .hero-note-copy span:nth-child(3),
+  .hero-note-copy span:nth-child(4),
+  .hero-note-right .hero-note-copy span:nth-child(2),
+  .hero-note-right .hero-note-copy span:nth-child(3),
+  .hero-note-right .hero-note-copy span:nth-child(4){margin-top:0}
+  .hero-note .trust,.hero-trust-mobile{display:none}
+  .intro-stage>.scroll-cue{left:50%;right:auto;bottom:5px;transform:translateX(-50%)}
+  .intro-stage>.scroll-cue span{display:none}
+
+  .coin-stage{height:138svh}
+  .coin-scene{height:100svh;min-height:calc(100svh - 58px)}
+  .coin-wordmark{
+    inset:50% 24px auto;
+    transform:translateY(-53%);
+    flex-direction:row;
+    justify-content:space-between;
+    gap:0
+  }
+  .coin-wordmark span{
+    font-family:"Songti SC","Noto Serif SC","STSong","SimSun",serif;
+    font-size:clamp(154px,25vw,214px);
+    line-height:.72
+  }
+  .coin-stage .coin-real{width:min(31vw,258px)}
+  .coin-stage .coin-wrap p{margin-top:10px;font-size:10px}
+  .coin-stage .coin-wrap p a{display:none}
+  .coin-note{bottom:16px;font-size:9px}
+  .coin-note-left{left:24px}
+  .coin-note-right{right:24px;display:block}
+  .coin-cue{bottom:5px}
+
+  .cast-stage{min-height:0;padding:94px 18px 48px}
+  .cast-section-title{height:76px}
+  .cast-brush-mark{width:118px;height:54px}
+  .cast-section-title span{font-size:13px}
+  .cast-stage .cast-card{width:min(780px,100%);padding:24px;border-radius:24px}
+  .cast-stage .card-heading{margin-bottom:16px}
+  .cast-stage .card-heading h2{font-size:28px}
+  .cast-stage .question-field textarea{min-height:72px}
+  .cast-stage fieldset{margin-top:16px}
+  .cast-stage .number-grid{gap:8px}
+  .cast-stage .cast-actions{margin-top:14px}
+}
+
+/* 6.7 Mobile reading cards: more room to read; portrait balance stays comparative. */
+@media(max-width:700px){
+  .deck-stage{
+    height:calc(clamp(430px,64svh,560px) + 20px)
+  }
+  .reading-card{
+    width:min(276px,74vw);
+    height:clamp(430px,64svh,560px);
+    margin-left:max(-138px,-37vw);
+    padding:24px 21px 34px
+  }
+  .reading-card.is-active{
+    scroll-padding:24px 0 34px;
+    cursor:auto
+  }
+  .reading-card.is-active p{
+    padding-bottom:28px
+  }
+}
+
+@media(max-width:700px) and (orientation:portrait){
+  .reading-visual[data-reading-visual="3"]{
+    padding-inline:12px
+  }
+  .balance-map{
+    grid-template-columns:minmax(0,1fr) 28px minmax(0,1fr);
+    align-items:stretch;
+    gap:8px;
+    margin:4px auto 0
+  }
+  .balance-map>div{
+    min-width:0;
+    min-height:148px;
+    padding:16px 9px;
+    display:flex;
+    flex-direction:column;
+    justify-content:center
+  }
+  .balance-map b{
+    font-size:12px;
+    line-height:1.75;
+    overflow-wrap:anywhere
+  }
+  .balance-map>i{
+    width:100%;
+    height:2px;
+    margin:auto
+  }
+  .balance-map>i::before{
+    top:-34px;
+    height:68px
+  }
+  .balance-map>i::after{
+    left:calc(50% - 11px);
+    top:32px;
+    border-left-width:11px;
+    border-right-width:11px;
+    border-bottom-width:17px
+  }
+}

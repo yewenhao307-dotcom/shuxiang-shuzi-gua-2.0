@@ -8,6 +8,21 @@ const reducedMotion=window.matchMedia('(prefers-reduced-motion:reduce)')
 const wait=ms=>new Promise(r=>setTimeout(r,reducedMotion.matches?1:ms))
 let motionMedia=null
 
+function initDirectCastLinks(){
+  const target=$('#cast')
+  if(!target)return
+  $$('a[href="#cast"]').forEach(link=>link.addEventListener('click',event=>{
+    if(event.defaultPrevented||event.button!==0||event.metaKey||event.ctrlKey||event.shiftKey||event.altKey)return
+    event.preventDefault()
+    if(location.hash!=='#cast')history.pushState(null,'','#cast')
+    const behavior=reducedMotion.matches?'auto':'smooth'
+    requestAnimationFrame(()=>target.scrollIntoView({behavior,block:'start'}))
+    if(behavior==='smooth')window.setTimeout(()=>{
+      if(Math.abs(target.getBoundingClientRect().top)>4)target.scrollIntoView({behavior:'auto',block:'start'})
+    },720)
+  }))
+}
+
 // Offline stroke outlines + medians from hanzi-writer-data (Arphic Public License).
 // Each median reveals only its matching outline, so adjacent strokes never bleed together.
 const CAST_TITLE_HANZI={
@@ -818,7 +833,7 @@ function scheduleHeroLiquid(){
   },{once:true})
 }
 
-renderCastBrushTitle();initTalismanCarousel();initContactSpecular();initContactCopy();initReadingDeck();updateEntryState();updateQuestionMode();renderHistory()
+renderCastBrushTitle();initDirectCastLinks();initTalismanCarousel();initContactSpecular();initContactCopy();initReadingDeck();updateEntryState();updateQuestionMode();renderHistory()
 if(!initGSAPMotion())initFallbackMotion()
 scheduleHeroLiquid()
 restoreReadingFromUrl()
