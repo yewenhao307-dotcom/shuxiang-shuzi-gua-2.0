@@ -8,6 +8,13 @@ import webbrowser
 
 
 ROOT = Path(__file__).resolve().parent
+CONTENT_SECURITY_POLICY = (
+    "default-src 'self'; base-uri 'self'; object-src 'none'; frame-src 'none'; "
+    "frame-ancestors 'none'; form-action 'self'; script-src 'self'; "
+    "script-src-attr 'none'; style-src 'self' 'unsafe-inline'; "
+    "img-src 'self' data: blob:; font-src 'self' data:; connect-src 'self'; "
+    "worker-src 'self' blob:; manifest-src 'self'; media-src 'none'"
+)
 
 
 def find_port(host, start=8787, attempts=30):
@@ -50,6 +57,14 @@ class AppHandler(SimpleHTTPRequestHandler):
         super().do_GET()
 
     def end_headers(self):
+        self.send_header("Content-Security-Policy", CONTENT_SECURITY_POLICY)
+        self.send_header("X-Frame-Options", "DENY")
+        self.send_header("X-Content-Type-Options", "nosniff")
+        self.send_header("Referrer-Policy", "strict-origin-when-cross-origin")
+        self.send_header(
+            "Permissions-Policy",
+            "camera=(), microphone=(), geolocation=(), browsing-topics=()",
+        )
         self.send_header("Cache-Control", "no-store")
         super().end_headers()
 

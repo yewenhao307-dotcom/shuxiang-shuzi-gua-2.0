@@ -2,6 +2,7 @@
   "name": "tiandi-yanshu",
   "private": true,
   "scripts": {
+    "build": "node scripts/build-static.mjs",
     "test": "npm run test:intent",
     "test:intent": "node scripts/test-question-intent.mjs"
   },

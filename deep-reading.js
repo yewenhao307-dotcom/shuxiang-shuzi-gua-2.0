@@ -11,11 +11,15 @@ const TRIGRAMS={
 const $=selector=>document.querySelector(selector)
 const readings=Array.isArray(window.__YIJING_READINGS__)?window.__YIJING_READINGS__:[]
 delete window.__YIJING_READINGS__
+const QUESTION_HANDOFF_KEY='tiandi-yanshu-question-handoff-v1'
+const normalizeQuestion=value=>String(value||'').replace(/[\u0000\u000b\u000c\u007f]/g,'').trim().slice(0,100)
 
 function params(){
   const query=new URLSearchParams(location.search)
   const values=['n1','n2','n3'].map((key,index)=>query.get(key)||['324','321','678'][index])
-  return{values,question:query.get('q')||''}
+  const question=normalizeQuestion(query.get('q'))
+  if(query.has('q')){const cleanUrl=new URL(location.href);cleanUrl.searchParams.delete('q');history.replaceState(history.state,'',`${cleanUrl.pathname}${cleanUrl.search}${cleanUrl.hash}`)}
+  return{values,question}
 }
 function calculation(values){const n=values.map(Number);return{lower:n[0]%8||8,upper:n[1]%8||8,line:n[2]%6||6}}
 function findReading(upper,lower){return readings.find(item=>item.upper_trigram===upper&&item.lower_trigram===lower)}
@@ -76,7 +80,8 @@ function fill(){
   setText('#changed-name',`${changed.name}卦`);setText('#changed-role',changed.theme)
   setText('#classic-line',line.classic)
   setText('#calculation-note',`第一组 ${input.values[0]} ÷ 8 取余得${calc.lower}，定${lower.name}为下卦；第二组 ${input.values[1]} ÷ 8 取余得${calc.upper}，定${upper.name}为上卦；第三组 ${input.values[2]} ÷ 6 取余得${calc.line}，定${line.title}为动爻。`)
-  const back=new URL('./index.html',location.href);back.searchParams.set('n1',input.values[0]);back.searchParams.set('n2',input.values[1]);back.searchParams.set('n3',input.values[2]);if(input.question)back.searchParams.set('q',input.question);back.hash='result';$('#back-reading').href=back
+  const back=new URL('./index.html',location.href);back.searchParams.set('n1',input.values[0]);back.searchParams.set('n2',input.values[1]);back.searchParams.set('n3',input.values[2]);back.hash='result';$('#back-reading').href=back
+  if(input.question){try{sessionStorage.setItem(QUESTION_HANDOFF_KEY,input.question)}catch{}}
 
   $('#copy-deep-reading').addEventListener('click',async()=>{
     try{await navigator.clipboard.writeText(readingText(state));setText('#copy-status','已复制完整解读');setTimeout(()=>setText('#copy-status',''),1600)}

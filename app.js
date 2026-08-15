@@ -1,5 +1,7 @@
 const TRIGRAMS={1:{name:"乾",symbol:"☰",lines:[1,1,1]},2:{name:"兑",symbol:"☱",lines:[1,1,0]},3:{name:"离",symbol:"☲",lines:[1,0,1]},4:{name:"震",symbol:"☳",lines:[1,0,0]},5:{name:"巽",symbol:"☴",lines:[0,1,1]},6:{name:"坎",symbol:"☵",lines:[0,1,0]},7:{name:"艮",symbol:"☶",lines:[0,0,1]},8:{name:"坤",symbol:"☷",lines:[0,0,0]}}
 const HISTORY_KEY="tiandi-yanshu-history-v2"
+const QUESTION_HANDOFF_KEY="tiandi-yanshu-question-handoff-v1"
+const QUESTION_MAX_LENGTH=100
 window.__TIANDI_BUILD__='20260814-context-4'
 const $=s=>document.querySelector(s),$$=s=>[...document.querySelectorAll(s)]
 const el={form:$("#oracle-form"),question:$("#question"),questionCount:$("#question-count"),inputs:$$('.number-entry input'),entries:$$('.number-entry'),flowDots:$$('.entry-flow i'),entryStatus:$("#entry-status"),error:$("#number-error"),random:$("#random-button"),primary:$('.primary'),result:$("#result"),hex:$("#hexagram"),history:$("#history-grid")}
@@ -658,10 +660,33 @@ $('#share-native').addEventListener('click',async()=>{try{const blob=await canva
 $('#copy-button').addEventListener('click',async event=>{if(!current)return;const button=event.currentTarget;try{await navigator.clipboard.writeText(resultText(current));button.textContent='已复制 ✓';button.classList.add('is-success');setTimeout(()=>{button.textContent='复制解读';button.classList.remove('is-success')},1400)}catch{button.textContent='复制失败';button.classList.add('is-failed');setTimeout(()=>{button.textContent='复制解读';button.classList.remove('is-failed')},1400)}})
 $('#reset-button').addEventListener('click',async()=>{current=null;el.result.classList.add('is-leaving');await wait(180);el.result.hidden=true;el.result.classList.remove('is-leaving','is-revealed');el.form.reset();el.questionCount.textContent='0';el.question.closest('.question-field').classList.remove('has-content');updateQuestionMode();el.error.textContent='';el.inputs.forEach(input=>input.removeAttribute('aria-invalid'));el.entries.forEach(e=>e.classList.remove('has-error','is-complete'));updateEntryState();refreshScrollMotion();$('#cast').scrollIntoView({behavior:'smooth'});await wait(260);el.inputs[0].focus()})
 
-function loadHistory(){try{return JSON.parse(localStorage.getItem(HISTORY_KEY)||'[]')}catch{return[]}}
-function saveHistory(result){const compact={timestamp:result.timestamp,question:result.question,numbers:result.numbers,id:result.reading.id,name:result.reading.name,theme:result.reading.theme};const history=[compact,...loadHistory().filter(i=>i.numbers.join()!=compact.numbers.join())].slice(0,6);localStorage.setItem(HISTORY_KEY,JSON.stringify(history));renderHistory()}
-function escapeHtml(v){return String(v).replaceAll('&','&amp;').replaceAll('<','&lt;').replaceAll('>','&gt;').replaceAll('"','&quot;').replaceAll("'",'&#039;')}
-function renderHistory(){const history=loadHistory();if(!history.length){el.history.innerHTML='<p class="empty">还没有卦笺，完成第一次起卦后会显示在这里。</p>';return}el.history.innerHTML=history.map(item=>`<button class="history-item" data-numbers="${item.numbers.join(',')}" data-question="${escapeHtml(item.question||'')}"><span>第 ${String(item.id).padStart(2,'0')} 卦</span><h4>${escapeHtml(item.name)}</h4><p>${escapeHtml(item.theme)}</p></button>`).join('');$$('.history-item').forEach(button=>button.addEventListener('click',async()=>{const n=button.dataset.numbers.split(',');button.classList.add('is-loading');button.setAttribute('aria-busy','true');el.inputs.forEach((input,i)=>input.value=n[i]);el.question.value=button.dataset.question||'';el.questionCount.textContent=el.question.value.length;el.question.closest('.question-field').classList.toggle('has-content',Boolean(el.question.value.trim()));updateQuestionMode();updateEntryState();$('#cast').scrollIntoView({behavior:'smooth'});await wait(450);await cast(n,{save:false});button.classList.remove('is-loading');button.removeAttribute('aria-busy')}))}
+function normalizeQuestion(value){return String(value||'').replace(/[\u0000\u000b\u000c\u007f]/g,'').trim().slice(0,QUESTION_MAX_LENGTH)}
+function normalizeHistoryItem(item){
+  if(!item||typeof item!=='object'||!Array.isArray(item.numbers)||item.numbers.length!==3)return null
+  const numbers=item.numbers.map(value=>String(value));if(numbers.some(value=>!/^\d{3}$/.test(value)))return null
+  const id=Number(item.id);if(!Number.isInteger(id)||id<1||id>64)return null
+  return{timestamp:Number.isFinite(Number(item.timestamp))?Number(item.timestamp):0,question:normalizeQuestion(item.question),numbers,id,name:String(item.name||'').slice(0,12),theme:String(item.theme||'').slice(0,80)}
+}
+function loadHistory(){try{const parsed=JSON.parse(localStorage.getItem(HISTORY_KEY)||'[]');return Array.isArray(parsed)?parsed.map(normalizeHistoryItem).filter(Boolean).slice(0,6):[]}catch{return[]}}
+function saveHistory(result){
+  const compact=normalizeHistoryItem({timestamp:result.timestamp,question:result.question,numbers:result.numbers,id:result.reading.id,name:result.reading.name,theme:result.reading.theme});if(!compact)return
+  const history=[compact,...loadHistory().filter(item=>item.numbers.join()!=compact.numbers.join())].slice(0,6)
+  try{localStorage.setItem(HISTORY_KEY,JSON.stringify(history))}catch{}
+  renderHistory()
+}
+function renderHistory(){
+  const history=loadHistory()
+  if(!history.length){const empty=document.createElement('p');empty.className='empty';empty.textContent='还没有卦笺，完成第一次起卦后会显示在这里。';el.history.replaceChildren(empty);return}
+  const fragment=document.createDocumentFragment()
+  history.forEach(item=>{
+    const button=document.createElement('button'),index=document.createElement('span'),name=document.createElement('h4'),theme=document.createElement('p')
+    button.type='button';button.className='history-item';button.dataset.numbers=item.numbers.join(',');button.dataset.question=item.question
+    index.textContent=`第 ${String(item.id).padStart(2,'0')} 卦`;name.textContent=item.name;theme.textContent=item.theme;button.append(index,name,theme)
+    button.addEventListener('click',async()=>{const numbers=button.dataset.numbers.split(',');button.classList.add('is-loading');button.setAttribute('aria-busy','true');el.inputs.forEach((input,i)=>input.value=numbers[i]);el.question.value=normalizeQuestion(button.dataset.question);el.questionCount.textContent=el.question.value.length;el.question.closest('.question-field').classList.toggle('has-content',Boolean(el.question.value.trim()));updateQuestionMode();updateEntryState();$('#cast').scrollIntoView({behavior:'smooth'});await wait(450);await cast(numbers,{save:false});button.classList.remove('is-loading');button.removeAttribute('aria-busy')})
+    fragment.append(button)
+  })
+  el.history.replaceChildren(fragment)
+}
 
 function animateResultReveal(){
   if(!window.gsap||reducedMotion.matches){refreshScrollMotion();return}
@@ -802,7 +827,10 @@ function initContactCopy(){
 function restoreReadingFromUrl(){
   const params=new URLSearchParams(location.search),numbers=['n1','n2','n3'].map(key=>params.get(key))
   if(numbers.some(value=>!/^\d{3}$/.test(value||'')))return
-  el.inputs.forEach((input,index)=>input.value=numbers[index]);el.question.value=params.get('q')||'';el.questionCount.textContent=el.question.value.length
+  let question=normalizeQuestion(params.get('q'))
+  if(!question){try{question=normalizeQuestion(sessionStorage.getItem(QUESTION_HANDOFF_KEY));sessionStorage.removeItem(QUESTION_HANDOFF_KEY)}catch{}}
+  if(params.has('q')){const cleanUrl=new URL(location.href);cleanUrl.searchParams.delete('q');history.replaceState(history.state,'',`${cleanUrl.pathname}${cleanUrl.search}${cleanUrl.hash}`)}
+  el.inputs.forEach((input,index)=>input.value=numbers[index]);el.question.value=question;el.questionCount.textContent=el.question.value.length
   el.question.closest('.question-field').classList.toggle('has-content',Boolean(el.question.value.trim()));updateQuestionMode();updateEntryState()
   window.setTimeout(()=>cast(numbers,{save:false,scroll:location.hash==='#result'}),80)
 }
