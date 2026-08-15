@@ -7,7 +7,7 @@
     <meta name="theme-color" content="#F1E3B3" />
     <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='8' fill='%235B2A2A'/%3E%3Ctext x='32' y='45' text-anchor='middle' font-size='38' fill='white'%3E衍%3C/text%3E%3C/svg%3E" />
     <title>天地衍数｜数字卦</title>
-    <link rel="stylesheet" href="./styles.css?v=20260812-3" />
+    <link rel="stylesheet" href="./styles.css?v=20260814-mobile-layout-8" />
     <link rel="stylesheet" href="./components/LiquidEther/LiquidEther.css?v=20260810-1" />
   </head>
   <body>
@@ -39,6 +39,7 @@
         <div class="hero-note hero-note-right" role="note" aria-label="从一念之动，到万象之成，让古老的智慧照见当下的选择。">
           <p class="hero-note-copy" aria-hidden="true"><span>从一念之动</span><span>到万象之成</span><span>让古老的智慧</span><span>照见当下的选择</span></p>
         </div>
+        <div class="hero-trust-mobile" aria-hidden="true"><span>道法自然</span><span>清静无为</span><span>天人合一</span></div>
 
         <a class="scroll-cue" href="#coin-stage" aria-label="向下观象"><span>向下观象</span><i aria-hidden="true"></i></a>
       </section>
@@ -139,8 +140,7 @@
           <div class="result-summary"><span id="result-theme">—</span><p id="result-reflection">—</p></div>
         </div>
 
-        <section class="reading-deck" aria-labelledby="reading-deck-title">
-          <header class="reading-deck-heading"><div><p>深度解读</p><h3 id="reading-deck-title">七面观照</h3></div><span>选择一张卡，查看对应结构</span></header>
+        <section class="reading-deck" aria-label="卦象解读卡牌">
           <div class="deck-shell">
             <button class="deck-arrow deck-prev" type="button" aria-label="上一张解读卡"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m15 18-6-6 6-6"/></svg></button>
             <div class="deck-stage" id="reading-deck" tabindex="0" role="listbox" aria-orientation="horizontal" aria-label="深度解读卡牌，使用左右方向键或滑动切换">
@@ -171,9 +171,9 @@
         </section>
 
         <div class="derived">
-          <div class="section-title"><p>衍生分析</p><h3>因时察势</h3><span id="time-label">—</span></div>
-          <div class="derived-main"><p id="derived-copy">—</p><div class="path"><span>根源 <b id="path-root">—</b></span><i>→</i><span>走向 <b id="path-trend">—</b></span><i>→</i><span>路径 <b id="path-action">—</b></span></div></div>
-          <aside><strong>候变之期</strong><p id="season-note">—</p><small>古历由浏览器换算；日期用于记录与复盘，不预告结果。</small></aside>
+          <div class="section-title"><p>本卦小结</p><h3>精炼总结</h3><span id="time-label">—</span></div>
+          <div class="derived-main"><p id="derived-copy">—</p><div class="path"><span>眼下 <b id="path-root">—</b></span><i>→</i><span>留意 <b id="path-trend">—</b></span><i>→</i><span>下一步 <b id="path-action">—</b></span></div></div>
+          <aside class="consult-note"><strong>与占卜师沟通</strong><p>若想结合具体处境继续梳理，可以补充事情背景、现实顾虑，以及最希望确认的问题。</p><a href="#contact">查看咨询方式 <span aria-hidden="true">→</span></a><small>沟通用于整理问题与现实选择，不替代医疗、法律、投资等专业意见。</small></aside>
         </div>
 
         <details class="calculation">
@@ -192,7 +192,7 @@
       </section>
 
       <section class="method" id="method">
-        <div class="section-title"><p>方法公开</p><h3 aria-label="三数定卦，规则如一"><span>三数定</span><span>卦，规则</span><span>如一</span></h3><span>保留旧版算法与六十四卦映射</span></div>
+        <div class="section-title"><p>方法公开</p><h3 aria-label="三数定卦 规则如一"><span>三数定卦</span><span>规则如一</span></h3></div>
         <div class="steps"><article><b>一</b><h4>定下卦</h4><p>第一组数字 ÷ 8，取余数；整除按 8 计。</p></article><article><b>二</b><h4>定上卦</h4><p>第二组数字 ÷ 8，取余数；整除按 8 计。</p></article><article><b>三</b><h4>定动爻</h4><p>第三组数字 ÷ 6，取余数；整除按 6 计。</p></article></div>
         <div class="trigrams"><span>1 乾 ☰</span><span>2 兑 ☱</span><span>3 离 ☲</span><span>4 震 ☳</span><span>5 巽 ☴</span><span>6 坎 ☵</span><span>7 艮 ☶</span><span>8 坤 ☷</span></div>
       </section>
@@ -207,7 +207,7 @@
           <p class="contact-kicker"><span aria-hidden="true"></span> 山水有信 · 来日方长</p>
           <div class="contact-heading">
             <h2 id="contact-title">与天地衍数保持联系</h2>
-            <p>有关内容、体验与合作，欢迎来函。</p>
+            <p>有关内容、体验、咨询与合作，欢迎来函。</p>
           </div>
           <button class="contact-mail" id="contact-copy" type="button" data-email="dugushaoxiaay@163.com" aria-describedby="contact-copy-status">
             <span id="contact-copy-status" aria-live="polite">复制邮箱</span><strong>dugushaoxiaay@163.com</strong><i aria-hidden="true">⧉</i>
@@ -248,7 +248,6 @@
     <footer><strong>天地衍数</strong><p>以传统文化为镜，以现实行动为尺。内容仅供文化体验与自我反思，不构成医疗、法律、投资等专业建议。</p><a href="#top">回到顶部 ↑</a></footer>
     <script src="./assets/vendor/gsap.min.js?v=3.13.0" defer></script>
     <script src="./assets/vendor/ScrollTrigger.min.js?v=3.13.0" defer></script>
-    <script src="./assets/vendor/hero-liquid.bundle.js?v=20260811-1" defer></script>
-    <script src="./app.js?v=20260812-2" defer></script>
+    <script src="./app.js?v=20260814-mobile-motion-4" defer></script>
   </body>
 </html>

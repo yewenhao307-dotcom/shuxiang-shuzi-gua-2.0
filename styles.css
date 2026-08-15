@@ -1,3 +1,5 @@
+@font-face{font-family:"Noto Serif SC";src:local("Noto Serif SC"),url("./assets/fonts/noto-serif-sc-site.woff2?v=20260814") format("woff2");font-style:normal;font-weight:100 900;font-display:swap}
+@font-face{font-family:"Noto Sans SC";src:local("Noto Sans SC"),url("./assets/fonts/noto-sans-sc-site.woff2?v=20260814") format("woff2");font-style:normal;font-weight:100 900;font-display:swap}
 :root{--ink:#201a15;--muted:#766c60;--paper:#f3efe4;--cream:#e7deca;--red:#963c2f;--red2:#6f2922;--gold:#b8863c;--dark:#28211b;--line:rgba(61,47,37,.18)}
 *{box-sizing:border-box}html{scroll-behavior:smooth}body{margin:0;background:var(--paper);color:var(--ink);font-family:"Noto Sans SC","Microsoft YaHei",sans-serif;background-image:radial-gradient(circle at 10% 10%,rgba(150,60,47,.05),transparent 24%),linear-gradient(rgba(67,51,39,.025) 1px,transparent 1px);background-size:auto,100% 6px}button,input,textarea{font:inherit}button,a{color:inherit}.skip-link{position:fixed;left:12px;top:-80px;z-index:100;background:#fff;padding:10px 16px}.skip-link:focus{top:12px}.topbar{height:70px;display:flex;align-items:center;justify-content:space-between;padding:0 clamp(20px,4vw,70px);border-bottom:1px solid var(--line);position:relative;z-index:5}.brand{display:flex;align-items:center;gap:11px;text-decoration:none}.brand-seal{width:34px;height:34px;border:1px solid var(--red);color:var(--red);display:grid;place-items:center;font-family:"Noto Serif SC",serif;font-weight:700}.brand strong{display:block;font-family:"Noto Serif SC",serif;font-size:20px;letter-spacing:.16em}.brand small{display:block;color:var(--muted);font-size:9px;letter-spacing:.22em;margin-top:2px}.topbar nav{display:flex;gap:34px}.topbar nav a{font-size:13px;text-decoration:none;color:var(--muted)}.top-action{background:var(--red);color:#fff;text-decoration:none;padding:11px 22px;font-size:13px;letter-spacing:.08em}
 .hero{min-height:calc(100svh - 70px);max-width:1440px;margin:auto;padding:clamp(36px,6vh,70px) clamp(20px,5vw,72px);display:grid;grid-template-columns:1fr .7fr 1.2fr;align-items:center;gap:clamp(26px,4vw,68px);position:relative}.overline{text-transform:uppercase;font-size:12px;letter-spacing:.22em;color:var(--red);display:flex;align-items:center;gap:10px}.overline span{width:26px;border-top:1px solid}.hero-copy h1{font:900 clamp(48px,6vw,88px)/1.1 "Noto Serif SC",serif;letter-spacing:.04em;margin:22px 0}.hero-copy h1 em{color:var(--red);font-style:normal}.lead{max-width:510px;color:var(--muted);font:500 15px/2 "Noto Serif SC",serif}.trust{display:flex;flex-wrap:wrap;gap:8px;margin-top:24px}.trust span{border:1px solid var(--line);padding:6px 10px;font-size:10px;color:var(--muted)}
@@ -290,6 +292,11 @@ button:disabled,[aria-busy="true"]{cursor:wait}
 @media(hover:hover) and (pointer:fine){#method .steps article:hover{background:rgba(255,250,234,.44);box-shadow:none}#history .history-item:hover{transform:translateY(-5px);border-color:rgba(91,42,42,.34);box-shadow:0 18px 42px rgba(83,54,28,.1),inset 0 1px 0 rgba(255,255,255,.9)}}
 @media(max-width:1050px){#method.method,#history.history{grid-template-columns:1fr;min-height:0;gap:42px}#method>.section-title,#history>.section-title{padding-top:0}#method>.section-title h3 span{display:inline}#method>.section-title h3 span+span::before{content:" "}}
 @media(max-width:700px){#method.method,#history.history{padding:64px 18px;gap:34px}#method>.section-title h3,#history>.section-title h3{font-size:54px;line-height:.96;letter-spacing:-.06em}#method>.section-title h3 span{display:block}#method>.section-title h3 span+span::before{content:none}#method .steps article{padding:30px 20px;grid-template-columns:44px 1fr;column-gap:12px}#method .steps b{font-size:27px}#method .steps h4{font-size:24px}#method .steps p{margin-top:12px;font-size:12px}#history .history-grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:9px}#history .history-item{min-height:152px;padding:21px 18px;border-radius:22px}#history .history-item h4{margin:18px 0 8px;font-size:28px}}
+
+/* Method title: two deliberate lines at every viewport. */
+#method>.section-title h3 span{display:block!important;white-space:nowrap}
+#method>.section-title h3 span+span{margin-top:.16em}
+#method>.section-title h3 span+span::before{content:none!important}
 
 /* 3.2 method rules + recent readings — reference-aligned layout */
 .method{
@@ -934,7 +941,7 @@ body{background:var(--silk-soft);background-image:none;color:var(--wood-ink)}
 }
 .hero-liquid canvas{position:relative;z-index:1;filter:saturate(1.04) contrast(1.03);transform:translateZ(0)}
 .hero-liquid.is-static::before{opacity:.9;filter:blur(26px)}
-.intro-stage .hero-copy,.intro-stage .hero-note,.intro-stage>.scroll-cue{z-index:3}
+.intro-stage .hero-copy,.intro-stage .hero-note,.intro-stage .hero-trust-mobile,.intro-stage>.scroll-cue{z-index:3}
 .intro-stage::after{display:none}.intro-stage .hero-copy{position:relative;width:100%;max-width:none;height:410px}
 .intro-stage .hero-copy h1{position:absolute;inset:-58px 0 auto;z-index:1;margin:0;color:var(--wood-ink);font-size:clamp(104px,13.2vw,210px);font-weight:800;line-height:.86;letter-spacing:-.09em}
 .intro-stage .hero-copy h1 span,.intro-stage .hero-copy h1 em{display:block;white-space:nowrap}
@@ -968,6 +975,7 @@ body{background:var(--silk-soft);background-image:none;color:var(--wood-ink)}
   font:500 9px/1.15 "Noto Sans SC","Microsoft YaHei",sans-serif;letter-spacing:.12em;
   transition:color 180ms ease-out
 }
+.hero-trust-mobile{display:none}
 .intro-stage>.scroll-cue{bottom:24px}.scroll-cue span{font-size:0}.intro-stage>.scroll-cue span::after{content:"SCROLL";font-size:8px;letter-spacing:.2em}
 .intro-stage>.scroll-cue,.coin-stage .scroll-cue{color:var(--wood-muted)}.intro-stage>.scroll-cue i,.coin-stage .scroll-cue i{background:linear-gradient(var(--rosewood),transparent)}
 
@@ -1147,8 +1155,8 @@ footer p{color:rgba(251,246,232,.72)}footer a{color:var(--silk-base)}
   .intro-stage .hero-copy h1 em{margin-top:clamp(100px,30vw,118px)}
   .hero-note{bottom:46px;width:min(242px,calc(100vw - 88px));height:146px;min-height:146px;padding:13px 14px}.hero-note-right{display:none}.hero-note-left{left:14px}.hero-note-copy{gap:7px}.hero-note-copy span{font-size:11px;letter-spacing:.1em}.hero-note-copy span:first-child{font-size:13px}.hero-note-copy span:nth-child(2){margin-top:9px}.hero-note-copy span:nth-child(3){margin-top:2px}.hero-note-copy span:nth-child(4){margin-top:12px}.hero-note .trust{margin-left:7px;gap:4px}.hero-note .trust span{font-size:7.5px}
   .intro-stage>.scroll-cue{right:18px;left:auto;transform:none;bottom:24px}
-  .coin-stage{height:112svh}.coin-scene{min-height:560px}.coin-wordmark{inset:50% 10px auto;transform:translateY(-62%)}
-  .coin-wordmark span{font-size:42vw}.coin-stage .coin-real{width:min(73vw,330px)}
+  .coin-stage{height:112svh}.coin-scene{min-height:560px}.coin-wordmark{inset:50% auto auto 50%;transform:translate(-50%,-54%);flex-direction:column;justify-content:center;gap:.05em}
+  .coin-wordmark span{font-size:42vw;line-height:.72;letter-spacing:-.08em}.coin-stage .coin-real{width:min(73vw,330px)}
   .coin-stage .coin-wrap p{max-width:250px;margin-left:auto;margin-right:auto;line-height:1.7}.coin-note{bottom:60px;font-size:9px}.coin-note-right{display:none}
   .cast-stage{min-height:118svh;padding:126px 12px 80px}.cast-section-title{height:88px;padding:0 18px;gap:12px}.cast-section-title strong{font-size:23px}.cast-brush-mark{width:126px;height:58px}.cast-section-title span{font-size:14px}
   .cast-stage .cast-card{width:100%;padding:26px 16px 20px;border-radius:24px}.cast-stage .card-heading h2{font-size:30px}
@@ -1408,3 +1416,158 @@ footer p{color:rgba(251,246,232,.72)}footer a{color:var(--silk-base)}
 @media(hover:hover) and (pointer:fine){#method .steps article:hover{background:rgba(255,250,234,.44);box-shadow:none}#history .history-item:hover{transform:translateY(-5px);border-color:rgba(91,42,42,.34);box-shadow:0 18px 42px rgba(83,54,28,.1),inset 0 1px 0 rgba(255,255,255,.9)}}
 @media(max-width:1050px){#method.method,#history.history{grid-template-columns:1fr;min-height:0;gap:42px}#method>.section-title,#history>.section-title{padding-top:0}#method>.section-title h3 span{display:inline}#method>.section-title h3 span+span::before{content:" "}}
 @media(max-width:700px){#method.method,#history.history{padding:64px 18px;gap:34px}#method>.section-title h3,#history>.section-title h3{font-size:54px;line-height:.96;letter-spacing:-.06em}#method>.section-title h3 span{display:block}#method>.section-title h3 span+span::before{content:none}#method .steps article{padding:30px 20px;grid-template-columns:44px 1fr;column-gap:12px}#method .steps b{font-size:27px}#method .steps h4{font-size:24px}#method .steps p{margin-top:12px;font-size:12px}#history .history-grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:9px}#history .history-item{min-height:152px;padding:21px 18px;border-radius:22px}#history .history-item h4{margin:18px 0 8px;font-size:28px}}
+
+/* 6.2 Focused flow — preserve the visual system while removing idle scroll space */
+@media(min-width:1051px){
+  .intro-stage{min-height:max(700px,calc(92svh - 78px));padding-bottom:104px}
+  .coin-stage{height:158svh}
+  .cast-stage{min-height:112svh;padding-top:clamp(142px,16vh,164px);padding-bottom:clamp(72px,8vh,92px)}
+  .result-top{min-height:290px;padding-top:36px;padding-bottom:32px;gap:clamp(34px,3.6vw,56px)}
+  .reading-deck{padding-top:24px;padding-bottom:44px}
+  .reading-deck-heading{margin-bottom:14px}
+  .deck-stage{height:500px}
+  .reading-card{top:8px;width:272px;height:483.556px;margin-left:-136px;padding:29px 24px;border-radius:30px}
+  .reading-card h4{margin-top:18px;font-size:26px}
+  .reading-card strong{margin-top:20px;padding:13px 12px;font-size:12.5px;line-height:1.74}
+  .reading-card p{font-size:11.75px;line-height:1.84;-webkit-line-clamp:8}
+}
+
+@media(min-width:701px) and (max-width:1050px){
+  .intro-stage{min-height:max(680px,calc(94svh - 78px));padding-bottom:104px}
+  .coin-stage{height:154svh}
+  .cast-stage{min-height:112svh;padding-top:142px;padding-bottom:76px}
+  .result-top{min-height:310px;padding-top:40px;padding-bottom:36px;gap:38px}
+  .reading-deck{padding-top:28px;padding-bottom:46px}
+  .reading-deck-heading{margin-bottom:16px}
+}
+
+@media(max-width:700px){
+  .coin-stage{height:122svh}
+  .cast-stage{min-height:108svh;padding-top:108px;padding-bottom:62px}
+  .result-top{min-height:0;padding-top:34px;padding-bottom:30px}
+  .reading-deck{padding-top:34px;padding-bottom:42px}
+}
+
+@media(prefers-reduced-motion:reduce){.coin-stage{height:100svh}}
+
+/* Result deck: let the cards directly follow the revealed hexagram. */
+.reading-deck{padding-top:14px}
+@media(max-width:1050px){.reading-deck{padding-top:16px}}
+@media(max-width:700px){.reading-deck{padding-top:12px}}
+
+/* Method heading: ease the dense display typography without changing its footprint. */
+#method>.section-title h3{max-width:470px;line-height:1.02;letter-spacing:-.035em}
+@media(max-width:700px){#method>.section-title h3{line-height:1.06;letter-spacing:-.025em}}
+
+/* 6.3 Consultation note — replaces unsupported timing inference */
+.derived .consult-note{display:flex;flex-direction:column;align-items:flex-start}
+.derived .consult-note p{margin-bottom:16px}
+.derived .consult-note a{
+  display:inline-flex;align-items:center;gap:10px;margin:0 0 18px;padding:9px 0 7px;
+  color:var(--rosewood);font:600 12px/1.4 "Noto Sans SC","Microsoft YaHei",sans-serif;
+  letter-spacing:.08em;text-decoration:none;border-bottom:1px solid rgba(91,42,42,.5)
+}
+.derived .consult-note a span{transition:transform 180ms cubic-bezier(.22,1,.36,1)}
+@media(hover:hover) and (pointer:fine){.derived .consult-note a:hover span{transform:translateX(4px)}}
+@media(max-width:700px){.derived .consult-note a{min-height:44px;margin-bottom:12px;padding:11px 0}}
+
+/* 6.4 Mobile-only composition and reading flow. */
+@media(max-width:700px){
+  .topbar .brand strong,.topbar nav a{
+    font-family:"Songti SC","Noto Serif SC","STSong","SimSun",serif;
+    font-weight:500
+  }
+
+  .intro-stage{
+    min-height:max(calc(100svh - 58px),620px);
+    padding:7vh 16px 132px
+  }
+  .intro-stage .hero-copy{height:350px}
+  .intro-stage .hero-copy h1{
+    inset:-10px auto auto 50%;
+    max-width:calc(100vw - 24px);
+    gap:clamp(12px,3.5vw,18px);
+    font-family:"Songti SC","Noto Serif SC",serif;
+    font-size:clamp(72px,20.5vw,82px);
+    font-weight:800;
+    font-synthesis:none;
+    line-height:.9;
+    letter-spacing:-.08em
+  }
+  .intro-stage .hero-copy h1 em{margin-top:clamp(80px,23vw,96px)}
+  .hero-note{bottom:28px;height:138px;min-height:138px;padding:10px 8px}
+  .hero-note-left{left:12px;width:156px;justify-content:center}
+  .hero-note-right{display:flex;right:12px;width:156px;justify-content:center}
+  .hero-note-left .hero-note-copy,.hero-note-right .hero-note-copy{width:100%;justify-content:center}
+  .hero-note-copy{gap:6px}
+  .hero-note-copy span{font-size:10px;letter-spacing:.08em}
+  .hero-note-copy span:first-child{font-size:12px}
+  .hero-note .trust{display:none}
+  .hero-trust-mobile{
+    position:absolute;left:50%;bottom:31px;transform:translateX(-50%);
+    display:flex;align-items:center;justify-content:center;gap:18px;
+    color:var(--rosewood);font:500 9px/1 "Noto Sans SC","Microsoft YaHei",sans-serif;
+    letter-spacing:.1em;white-space:nowrap
+  }
+  .intro-stage>.scroll-cue{left:50%;right:auto;bottom:8px;transform:translateX(-50%)}
+  .intro-stage>.scroll-cue span{display:none}
+
+  .coin-stage{height:84svh}
+  .coin-scene{height:84svh;min-height:500px}
+  .coin-wordmark{
+    inset:45% auto auto 50%;
+    transform:translate(-50%,-50%);
+    gap:clamp(170px,44vw,186px)
+  }
+  .coin-wordmark span{
+    font-family:"Songti SC","Noto Serif SC","STSong","SimSun",serif;
+    font-size:clamp(190px,55vw,220px);
+    font-weight:700;
+    line-height:.8;
+    letter-spacing:-.08em
+  }
+  .coin-stage .coin-wrap{transform:none}
+  .coin-stage .coin-real{width:min(65vw,264px)}
+  .coin-stage .coin-wrap p{position:relative;top:128px;margin-top:16px;line-height:1.6}
+  .coin-stage .coin-wrap p a{display:none!important}
+  .coin-note{bottom:18px}
+  .coin-cue{bottom:9px}
+
+  .result-top{
+    min-height:0;
+    padding:26px 16px 18px;
+    grid-template-columns:minmax(0,1fr) minmax(108px,.62fr);
+    grid-template-rows:auto auto;
+    align-items:start;
+    column-gap:16px;
+    row-gap:18px
+  }
+  .result-top>div:first-child{align-self:start}
+  .hexagram-wrap{align-self:center;gap:16px}
+  .result-top h2{font-size:68px;margin:9px 0}
+  .result-question{margin-top:12px!important;padding-top:11px}
+  .result-summary{
+    align-self:start;
+    padding:18px 0 0;
+    border-top:1px solid rgba(255,255,255,.12)
+  }
+  .result-summary span{font-size:clamp(25px,7vw,29px);line-height:1.22}
+  .result-summary p{margin:12px 0 0;font-size:13px;line-height:1.78}
+  .reading-deck{padding-top:10px;padding-bottom:34px}
+
+  .reading-card.is-active{
+    overflow-y:auto;
+    overscroll-behavior:contain;
+    touch-action:pan-y;
+    scrollbar-width:none;
+    -ms-overflow-style:none;
+    -webkit-overflow-scrolling:touch
+  }
+  .reading-card.is-active::-webkit-scrollbar{display:none;width:0;height:0}
+  .reading-card.is-active strong,.reading-card.is-active p{
+    display:block;
+    -webkit-line-clamp:unset;
+    overflow:visible
+  }
+  .reading-card.is-active p{padding-bottom:18px}
+}

@@ -1,5 +1,6 @@
 const TRIGRAMS={1:{name:"乾",symbol:"☰",lines:[1,1,1]},2:{name:"兑",symbol:"☱",lines:[1,1,0]},3:{name:"离",symbol:"☲",lines:[1,0,1]},4:{name:"震",symbol:"☳",lines:[1,0,0]},5:{name:"巽",symbol:"☴",lines:[0,1,1]},6:{name:"坎",symbol:"☵",lines:[0,1,0]},7:{name:"艮",symbol:"☶",lines:[0,0,1]},8:{name:"坤",symbol:"☷",lines:[0,0,0]}}
 const HISTORY_KEY="tiandi-yanshu-history-v2"
+window.__TIANDI_BUILD__='20260814-context-4'
 const $=s=>document.querySelector(s),$$=s=>[...document.querySelectorAll(s)]
 const el={form:$("#oracle-form"),question:$("#question"),questionCount:$("#question-count"),inputs:$$('.number-entry input'),entries:$$('.number-entry'),flowDots:$$('.entry-flow i'),entryStatus:$("#entry-status"),error:$("#number-error"),random:$("#random-button"),primary:$('.primary'),result:$("#result"),hex:$("#hexagram"),history:$("#history-grid")}
 let readings=[],current=null,casting=false,readingsPromise=null
@@ -204,7 +205,18 @@ el.inputs.forEach((input,index)=>input.addEventListener('input',()=>{
   input.value=input.value.replace(/\D/g,'').slice(0,3);entry.classList.remove('has-error');input.removeAttribute('aria-invalid');el.error.textContent='';updateEntryState()
   if(!wasComplete&&input.value.length===3){pulse(entry,'just-completed');if(el.inputs[index+1])el.inputs[index+1].focus();else pulse(el.primary,'ready-pulse',420)}
 }))
-el.question.addEventListener('input',()=>{el.questionCount.textContent=el.question.value.length;el.question.closest('.question-field').classList.toggle('has-content',Boolean(el.question.value.trim()));updateQuestionMode()})
+let questionSyncFrame=0
+function syncQuestionInputState(){
+  el.questionCount.textContent=el.question.value.length
+  el.question.closest('.question-field').classList.toggle('has-content',Boolean(el.question.value.trim()))
+  updateQuestionMode()
+}
+function scheduleQuestionInputSync(){
+  syncQuestionInputState();cancelAnimationFrame(questionSyncFrame);questionSyncFrame=requestAnimationFrame(syncQuestionInputState)
+}
+;['input','change','compositionend'].forEach(eventName=>el.question.addEventListener(eventName,scheduleQuestionInputSync))
+el.question.addEventListener('paste',()=>setTimeout(scheduleQuestionInputSync,0))
+el.question.addEventListener('blur',syncQuestionInputState)
 el.random.addEventListener('click',async()=>{
   if(casting)return
   const final=el.inputs.map(()=>String(Math.floor(Math.random()*900)+100)),originalText=el.random.textContent
@@ -249,24 +261,36 @@ function seasonalContext(date=new Date()){
     const value=type=>parts.find(part=>part.type===type)?.value
     const rawMonth=value('month')||'',monthText=rawMonth.replace(/^闰/,'')
     const monthIndex=monthNumbers[monthText]||1,day=Number(value('day'))||1,yearName=value('yearName')||fallbackYearName
-    let boundary=null
-    for(let offset=1;offset<=40;offset+=1){
-      const probe=new Date(date);probe.setHours(12,0,0,0);probe.setDate(probe.getDate()+offset)
-      const probeParts=new Intl.DateTimeFormat('zh-CN-u-ca-chinese',{month:'long',day:'numeric'}).formatToParts(probe)
-      const probeMonth=probeParts.find(part=>part.type==='month')?.value||''
-      if(probeMonth&&probeMonth!==rawMonth){boundary={offset,date:probe,month:probeMonth};break}
-    }
     const ancientLabel=`${yearName}年${rawMonth}${lunarDayText(day)}`
-    const futureLabel=boundary
-      ?`下一观察点：${boundary.offset}日后进入${boundary.month}（公历${boundary.date.getMonth()+1}月${boundary.date.getDate()}日）。若局面有变，先看这一交界前后三日；届时只核对现实条件是否出现新信号。`
-      :'下一观察点：七日后。届时只核对现实条件是否出现新信号，再决定是否继续。'
-    return{year,yearName,monthLabel:`农历${rawMonth}`,dateLabel:`农历${rawMonth}${lunarDayText(day)}`,ancientLabel,futureLabel,basis:'浏览器中国农历换算',...months[monthIndex]}
+    return{year,yearName,monthLabel:`农历${rawMonth}`,dateLabel:`农历${rawMonth}${lunarDayText(day)}`,ancientLabel,basis:'浏览器中国农历换算',...months[monthIndex]}
   }catch{
     const monthIndex=date.getMonth()+1
-    return{year,yearName:fallbackYearName,monthLabel:`公历${monthIndex}月`,dateLabel:`公历${monthIndex}月${date.getDate()}日`,ancientLabel:`公历${year}年${monthIndex}月${date.getDate()}日`,futureLabel:'下一观察点：七日后。届时只核对现实条件是否出现新信号，再决定是否继续。',basis:'浏览器公历记录',...months[monthIndex]}
+    return{year,yearName:fallbackYearName,monthLabel:`公历${monthIndex}月`,dateLabel:`公历${monthIndex}月${date.getDate()}日`,ancientLabel:`公历${year}年${monthIndex}月${date.getDate()}日`,basis:'浏览器公历记录',...months[monthIndex]}
   }
 }
-function concise(text,max=54){const clean=String(text||'').replace(/。\s*/g,'。');return clean.length>max?clean.slice(0,max).replace(/[，；、]$/,'')+'……':clean}
+function normalizeChinesePunctuation(text){
+  return String(text||'')
+    .replace(/\s+/g,' ')
+    .replace(/,/g,'，')
+    .replace(/;/g,'；')
+    .replace(/:/g,'：')
+    .replace(/!/g,'！')
+    .replace(/\?/g,'？')
+    .replace(/\s*([，。！？；：、])\s*/g,'$1')
+    .replace(/([。！？；])(?:[。！？；])+/g,'$1')
+    .replace(/[，；：]+。/g,'。')
+    .replace(/([“‘])\s+/g,'$1')
+    .replace(/\s+([”’])/g,'$1')
+    .trim()
+}
+function stripTerminalPunctuation(text){return normalizeChinesePunctuation(text).replace(/[，。！？；：]+$/,'')}
+function ensureChineseSentence(text){
+  const clean=normalizeChinesePunctuation(text)
+  if(!clean)return''
+  return/(?:[。！？；]|……)[”’]?$/.test(clean)?clean:`${clean}。`
+}
+function joinChineseSentences(...parts){return parts.flat().filter(Boolean).map(ensureChineseSentence).join('')}
+function concise(text,max=54){const clean=normalizeChinesePunctuation(text);return clean.length>max?clean.slice(0,max).replace(/[，；、]$/,'')+'……':clean}
 function compactFocus(text,max=28){
   const clean=String(text||'').replace(/^就.+?而言[，,:：]\s*/,'').replace(/^真正的拉扯来自/,'').replace(/^.+?第[一二三四五六1-6]+爻(?:可|宜|应当)?/,'').replace(/[“”]/g,'').trim()
   const phrase=clean.split(/[。；]/).find(part=>part.trim().length>=4)?.trim()||clean
@@ -285,27 +309,102 @@ const QUESTION_MODES={
 }
 const QUESTION_MARKERS={
   decision:['是否','要不要','该不该','值不值得','能不能','可不可以','适合吗','还是','选择','决定','怎么选','如何选','哪一个','哪个更','去留','离开','辞职','换工作','继续吗'],
-  relationship:['感情','关系','恋爱','婚姻','伴侣','对象','喜欢','复合','分手','相处','联系','沟通','朋友','家人','对方'],
-  resources:['投资','理财','股票','基金','生意','收入','钱','资金','财务','现金流','收益','亏损','买房','借款','贷款','债务','资源'],
-  career:['工作','事业','职业','项目','求职','面试','晋升','创业','合作','客户','团队','岗位','职场'],
+  relationship:['感情','关系','恋爱','婚姻','伴侣','对象','恋人','心上人','意中人','第三者','喜欢','复合','分手','结婚','迎娶','娶到','嫁给','白月光','出轨','背叛','忠诚','外遇','婚外情','劈腿','暧昧','相处','联系','沟通','朋友','家人','对方'],
+  resources:['投资','理财','股票','基金','生意','收入','赚钱','挣钱','发财','财运','工资','薪资','利润','盈利','回报','钱','资金','财务','现金流','收益','亏损','损失','买房','借钱','借款','还钱','贷款','债务','预算','成本','资产','存款','财富','资源'],
+  career:['工作','事业','职业','项目','求职','面试','晋升','升职','辞职','离职','跳槽','创业','合作','客户','团队','岗位','职场'],
   study:['学习','考试','考研','备考','读书','课程','技能','证书','论文','学校','专业','成长'],
   wellbeing:['健康','身体','情绪','焦虑','睡眠','压力','疲惫','内耗','康复','身心']
 }
-function classifyQuestion(question=''){
-  const text=question.trim().toLowerCase();if(!text)return'general'
-  const domains=['relationship','resources','study','wellbeing','career'],scores=domains.map((key,index)=>({key,index,score:QUESTION_MARKERS[key].reduce((sum,marker)=>sum+(text.includes(marker)?Math.max(1,marker.length-1):0),0)})).filter(item=>item.score>0).sort((a,b)=>b.score-a.score||a.index-b.index)
-  return scores[0]?.key||(QUESTION_MARKERS.decision.some(marker=>text.includes(marker))?'decision':'general')
+const QUESTION_CONTEXT_SIGNALS={
+  resources:[
+    {pattern:/(?:赚|挣|发财|财运|中奖|收入|工资|薪资|年薪|月薪|加薪|利润|盈利|回报|收益|亏损|亏钱|损失|赔钱|财富|资产|存款|现金流|投资|理财|股票|基金|借钱|借款|还钱|欠钱|欠款|贷款|债务|还款|预算|成本|价格|融资|分红)/,weight:5},
+    {pattern:/(?:\d+(?:\.\d+)?|[一二三四五六七八九十百千万亿]+)(?:元|块|万|百万|千万|亿)|多少钱|金钱|资金/,weight:6},
+    {pattern:/(?:买房|买车|生意|开店|财务|财产|资源)/,weight:4}
+  ],
+  relationship:[
+    {pattern:/(?:复合|分手|结婚|迎娶|娶到|嫁给|白月光|心上人|意中人|第三者|离婚|相处|吵架|争吵|冷战|表白|出轨|背叛|忠诚|外遇|婚外情|劈腿|暧昧|感情|婚姻|关系|爱不爱|还爱|沟通|联系)/,weight:5},
+    {pattern:/(?:女朋友|男朋友|伴侣|对象|爱人|家人|朋友|对方)/,weight:1}
+  ],
+  career:[
+    {pattern:/(?:升职|晋升|跳槽|辞职|离职|入职|求职|面试|职业|岗位|职场|工作|事业|项目|创业|客户|团队)/,weight:5},
+    {pattern:/(?:加薪|绩效|奖金)/,weight:6}
+  ],
+  study:[{pattern:/(?:考试|考研|备考|录取|论文|课程|学习|学校|专业|证书|成绩|分数)/,weight:5}],
+  wellbeing:[{pattern:/(?:健康|身体|情绪|焦虑|睡眠|压力|疲惫|内耗|康复|疼痛|症状|身心)/,weight:5}]
 }
-const QUESTION_ACTIONS=['离开','辞职','换工作','留下','继续','推进','暂停','放弃','复合','分手','联系','沟通','投资','购买','借款','报考','转行','合作','创业','搬家','结婚']
+const QUESTION_TERMINAL_INTENTS=[
+  {key:'relationship',pattern:/(?:出轨|背叛|有外遇|外遇|劈腿|暧昧|分手|复合|离婚|结婚|表白|原谅|吵架|争吵|冷战|相处|联系|沟通)(?:吗|呢|怎么办|该怎么办|如何|怎么处理|会怎样)?[？?。！!]*$/},
+  {key:'resources',pattern:/(?:赚钱|挣钱|发财|赚到|挣到|拿到|得到|损失|亏掉|赔掉|借到|还清|回本|盈利|亏损|投资|理财|买房|买车|多少钱)[^？?。！!]{0,12}(?:吗|呢|怎么办|该怎么办|如何|会怎样)?[？?。！!]*$/},
+  {key:'career',pattern:/(?:升职|晋升|跳槽|辞职|离职|换工作|入职|找到工作|创业|加薪)(?:吗|呢|怎么办|该怎么办|如何|会怎样)?[？?。！!]*$/},
+  {key:'study',pattern:/(?:考上|录取|通过考试|毕业|选专业|报考)(?:吗|呢|怎么办|该怎么办|如何|会怎样)?[？?。！!]*$/},
+  {key:'wellbeing',pattern:/(?:失眠|焦虑|疲惫|内耗|康复|好起来|缓解)(?:吗|呢|怎么办|该怎么办|如何|会怎样)?[？?。！!]*$/}
+]
+const QUESTION_STRONG_CORE_INTENTS=[
+  {key:'relationship',pattern:/(?:不再?|不会?|没有)?(?:出轨|背叛|外遇|婚外情|劈腿)|(?:忠诚|变心|第三者)/}
+]
+const QUESTION_INTENT_EXAMPLES={
+  relationship:['我和喜欢的人能在一起吗','这段感情会有结果吗','伴侣会不会背叛我','我们是否适合结婚','怎样修复两个人的关系','对方还在意我吗'],
+  resources:['这笔投资能不能回本','我什么时候能赚到钱','现在适合买房吗','这笔借款能收回来吗','收入能否覆盖支出','应该怎样控制损失'],
+  career:['这份工作还要继续吗','我能不能升职加薪','现在适合跳槽吗','这个项目能推进吗','面试会有结果吗','创业的时机成熟吗'],
+  study:['这次考试能通过吗','应该选择哪个专业','学习方法需要怎么调整','论文能顺利完成吗','现在适合报考吗','怎样突破学习瓶颈'],
+  wellbeing:['最近压力很大怎么办','睡眠状态什么时候改善','怎样减少情绪内耗','我需要休息一段时间吗','如何恢复生活节奏','现在的身心状态需要注意什么'],
+  decision:['两个选择应该选哪个','这件事要不要继续','现在做决定合适吗','应该留下还是离开','哪条路更适合我','是否值得尝试']
+}
+function charNgrams(value='',size=2){
+  const chars=Array.from(String(value).replace(/[“”"'？?。！!，,；;：:\s]/g,''))
+  if(chars.length<size)return new Set(chars)
+  return new Set(chars.slice(0,chars.length-size+1).map((_,index)=>chars.slice(index,index+size).join('')))
+}
+function diceSimilarity(left,right){
+  const a=charNgrams(left),b=charNgrams(right);if(!a.size||!b.size)return 0
+  let overlap=0;a.forEach(token=>{if(b.has(token))overlap+=1})
+  return(2*overlap)/(a.size+b.size)
+}
+function semanticExampleScore(text,key){return Math.max(0,...(QUESTION_INTENT_EXAMPLES[key]||[]).map(example=>diceSimilarity(text,example)))}
+function extractQuestionIntentText(question=''){
+  const text=String(question).trim().toLowerCase().replace(/\s+/g,'')
+  if(!text)return''
+  const conditionStart='(?:如果|假如|倘若|若是|等到|待到|当|在|因为|由于|只要|即使|哪怕)'
+  const trailingCondition=text.match(new RegExp(`^(.+?(?:吗|呢|怎么办|该怎么办|如何|怎么处理))[，,；;]?${conditionStart}(?:.+)$`))
+  if(trailingCondition?.[1])return trailingCondition[1]
+  const leadingCondition=text.match(new RegExp(`^${conditionStart}[^，,；;]+[，,；;](.+)$`))
+  if(leadingCondition?.[1])return leadingCondition[1]
+  const leadingTimedCondition=text.match(/^(?:如果|假如|倘若|若是|等到|待到).+?(?:以后|之后|的时候|之时)[，,；;]?(.+)$/)
+  if(leadingTimedCondition?.[1])return leadingTimedCondition[1]
+  const questionEnd=text.search(/[？?]/)
+  if(questionEnd>=0){
+    const tail=text.slice(questionEnd+1).replace(/^[，,；;：:。！!]+/,'')
+    if(new RegExp(`^${conditionStart}`).test(tail))return text.slice(0,questionEnd)
+  }
+  return text
+}
+function classifyQuestionDetails(question=''){
+  const text=extractQuestionIntentText(question);if(!text)return'general'
+  const terminalIntent=QUESTION_TERMINAL_INTENTS.find(signal=>signal.pattern.test(text))
+  if(terminalIntent)return{category:terminalIntent.key,focusText:text,confidence:.99,reason:'terminal-intent',scores:[]}
+  const strongCoreIntent=QUESTION_STRONG_CORE_INTENTS.find(signal=>signal.pattern.test(text))
+  if(strongCoreIntent)return{category:strongCoreIntent.key,focusText:text,confidence:.98,reason:'strong-core-intent',scores:[]}
+  const domains=['relationship','resources','career','study','wellbeing','decision'],scores=domains.map((key,index)=>{
+    const markerScore=(QUESTION_MARKERS[key]||[]).reduce((sum,marker)=>sum+(text.includes(marker)?Math.max(1,marker.length-1):0),0)
+    const contextScore=(QUESTION_CONTEXT_SIGNALS[key]||[]).reduce((sum,signal)=>sum+(signal.pattern.test(text)?signal.weight:0),0)
+    const similarity=semanticExampleScore(text,key),exampleScore=similarity>=.42?similarity*4:0
+    return{key,index,score:markerScore+contextScore+exampleScore,markerScore,contextScore,similarity}
+  }).filter(item=>item.score>0).sort((a,b)=>b.score-a.score||a.index-b.index)
+  const first=scores[0],second=scores[1],category=first?.key||'general',margin=first?first.score-(second?.score||0):0
+  const confidence=first?Math.min(.96,.52+Math.min(first.score,10)*.025+Math.min(margin,6)*.035):.35
+  return{category,focusText:text,confidence,reason:first?.similarity>=.42?'hybrid-examples':'weighted-context',scores}
+}
+function classifyQuestion(question=''){const result=classifyQuestionDetails(question);return typeof result==='string'?result:result.category}
+const QUESTION_ACTIONS=['离开','辞职','离职','换工作','留下','继续','推进','暂停','放弃','复合','分手','迎娶','娶到','嫁给','出轨','联系','沟通','投资','购买','借款','报考','转行','合作','创业','搬家','结婚']
 const QUESTION_TIME_MARKERS=['现在','目前','此刻','近期','最近','今年','明年','三个月内','半年内','尽快','马上','何时','什么时候']
 function cleanQuestionPart(value=''){return String(value).replace(/[“”"'？?。！!，,；;：:]/g,'').replace(/^(我|我们|自己|此刻|现在|目前)/,'').replace(/(?:吗|呢)$/,'').trim()}
 function extractQuestionProfile(question='',category=classifyQuestion(question)){
-  const raw=String(question||'').trim(),plain=cleanQuestionPart(raw),time=QUESTION_TIME_MARKERS.find(marker=>raw.includes(marker))||''
-  const choice=raw.match(/(.{1,14}?)(?:还是|或是|或者)(.{1,14}?)(?:[？?。]|$)/)
-  const action=QUESTION_ACTIONS.find(word=>raw.includes(word))||''
+  const raw=String(question||'').trim(),intentText=extractQuestionIntentText(raw),plain=cleanQuestionPart(intentText),time=QUESTION_TIME_MARKERS.find(marker=>raw.includes(marker))||''
+  const choice=intentText.match(/(.{1,14}?)(?:还是|或是|或者)(.{1,14}?)(?:[？?。]|$)/)
+  const action=QUESTION_ACTIONS.find(word=>intentText.includes(word))||''
   let object='这件事'
   const objectPatterns=[/离开(?:现在的|目前的)?([^？?，,。！!]{2,14})/,/换(?:一份|个)?([^？?，,。！!]{2,14})/,/(?:推进|继续|暂停|放弃)([^？?，,。！!]{2,16})/,/(?:与|和)([^？?，,。！!]{2,10})(?:沟通|合作|联系|复合|分手)/,/(?:投资|购买|报考)([^？?，,。！!]{2,16})/]
-  for(const pattern of objectPatterns){const match=raw.match(pattern);if(match?.[1]){object=cleanQuestionPart(match[1]);break}}
+  for(const pattern of objectPatterns){const match=intentText.match(pattern);if(match?.[1]){object=cleanQuestionPart(match[1]);break}}
   if(object==='这件事'&&category==='career')object='当前工作处境'
   if(object==='这件事'&&category==='relationship')object='这段关系'
   const form=choice?'choice':/(是否|要不要|该不该|能不能|可不可以|适合.{0,12}吗|吗[？?。！!]*$)/.test(raw)?'yes_no':/(何时|什么时候)/.test(raw)?'timing':/(如何|怎么|怎样)/.test(raw)?'how':/(会不会|能否成功|结果|未来)/.test(raw)?'outcome':'open'
@@ -316,7 +415,7 @@ function extractQuestionProfile(question='',category=classifyQuestion(question))
   return{raw,category,form,time,action,object,focus,alternatives,concern:concerns[category],evidencePrompt:evidencePrompts[category]}
 }
 function questionSpecificActions(profile,rm,line){
-  const action=(rm.actions?.[0]||'完成一次低成本核对').replace(/[。；]$/,'')
+  const action=stripTerminalPunctuation(rm.actions?.[0]||'完成一次低成本核对')
   if(profile.category==='career')return[`写下促使你考虑${profile.action||'改变'}的三项事实，并标记哪些已持续出现`,`核对${profile.action==='离开'||profile.action==='辞职'?'收入缓冲、下一步去向和交接成本':'职责、资源和可争取的支持'}`,`${action}，再设一个复核日期决定是否扩大动作`]
   if(profile.category==='relationship')return['各写一栏：已经发生的互动，以及你对对方的推测','用一句事实、一个感受和一个具体请求完成一次对话',`${action}，观察对方是否给出可核对的回应`]
   if(profile.category==='resources')return['写清可承受损失上限、占用期限和退出条件',`先用不影响基本安排的小额度验证“${action}”`,'只有证据与退出条件同时成立时再考虑扩大']
@@ -341,10 +440,10 @@ function directQuestionResponse(profile,result,rm,line,actions){
   return`${opening}${result.reading.name}提醒“${core}”；动点显示“${stage}”。先${actions[0]}，再决定是否扩大动作。`
 }
 function updateQuestionMode(){
-  const category=classifyQuestion(el.question.value),mode=QUESTION_MODES[category],container=$('#question-mode')
+  const classification=classifyQuestionDetails(el.question.value),category=typeof classification==='string'?classification:classification.category,mode=QUESTION_MODES[category],container=$('#question-mode')
   if(!container)return
   const changed=container.dataset.category!==category
-  container.dataset.category=category;$('#question-category').textContent=mode.label;$('#question-structure').textContent=`将按“${mode.heading}”呈现`
+  container.dataset.category=category;container.dataset.intentConfidence=typeof classification==='string'?'':classification.confidence.toFixed(2);container.dataset.intentReason=typeof classification==='string'?'':classification.reason;$('#question-category').textContent=mode.label;$('#question-structure').textContent=`将按“${mode.heading}”呈现`
   if(changed&&window.gsap&&!reducedMotion.matches)window.gsap.fromTo([$('#question-category'),$('#question-structure')],{autoAlpha:0,y:4},{autoAlpha:1,y:0,duration:.24,ease:'power2.out',stagger:.035,overwrite:'auto',clearProps:'opacity,visibility,transform'})
 }
 function stableHash(value){let hash=2166136261;for(const char of String(value)){hash^=char.codePointAt(0);hash=Math.imul(hash,16777619)}return hash>>>0}
@@ -354,13 +453,13 @@ function lineModernOf(result){const line=result.lineReading?.modern;if(line)retu
 function makeLineGuidance(result,mode,seed){
   const number=result.calculation.changingLine,m=lineModernOf(result),isYang=Boolean(result.lines[number-1])
   const transition=isYang?'阳爻转阴，动作宜由外放转向复核与收束':'阴爻转阳，隐而未显的条件正转为可见行动'
-  const advice=choose(m.advice||[],seed,17)||'先完成一项可验证的小调整。'
+  const advice=ensureChineseSentence(choose(m.advice||[],seed,17)||'先完成一项可验证的小调整。')
   const copies=[
     `${concise(m.situation,82)} ${transition}。${concise(m.tension,68)} ${mode.lens}。`,
-    `${m.signal?.meaning||'爻辞提示重新观察现实条件'}。${transition}。针对${mode.label}，${mode.lens}；眼下可做的是：${advice}`,
-    `${concise(m.tension,72)} ${concise(m.warning,70)} 对${mode.label}类问题，${mode.lens}；因而可以从“${advice.replace(/[。；]$/,'')}”开始。`
+    `${stripTerminalPunctuation(m.signal?.meaning||'爻辞提示重新观察现实条件')}。${transition}。针对${mode.label}，${mode.lens}；眼下可做的是：${advice}`,
+    `${ensureChineseSentence(concise(m.tension,72))}${ensureChineseSentence(concise(m.warning,70))}对${mode.label}类问题，${mode.lens}；因而可以从“${stripTerminalPunctuation(advice)}”开始。`
   ]
-  return{title:`${result.lineReading.title} · ${m.tone||'动点'}`,classic:result.lineReading.classic,copy:choose(copies,seed,29),advice,signal:m.signal?.label||'观察'}
+  return{title:`${result.lineReading.title} · ${m.tone||'动点'}`,classic:result.lineReading.classic,copy:ensureChineseSentence(choose(copies,seed,29)),advice,signal:m.signal?.label||'观察'}
 }
 function makeAnalysis(result){
   const category=classifyQuestion(result.question),profile=extractQuestionProfile(result.question,category),mode=QUESTION_MODES[category],seed=`${result.question}|${result.numbers.join('-')}|${result.reading.id}`,r=result.reading,rm=modernOf(r),changed=result.changedReading,cm=modernOf(changed),time=seasonalContext(),lineGuidance=makeLineGuidance(result,mode,seed),lineModern=lineModernOf(result),specificActions=questionSpecificActions(profile,rm,lineModern)
@@ -372,17 +471,18 @@ function makeAnalysis(result){
     `${subject}当前可从“${r.theme}”理解：${rm.core}。先确认${rm.strengths?.[0]||'哪些条件已经存在'}，再处理${rm.tensions?.[0]||'愿望与现实之间的距离'}。`,
     `本卦的底色是“${r.theme}”。对${subject}而言，可用“${rm.questions?.[0]||'什么事实最值得先确认？'}”重新检查眼前条件。`
   ]
-  const changedCopy=changed?`${changed.name}卦提示一种可能的后续方向：“${cm.core}”。这不是预告结果。针对${mode.label}，${mode.lens}；${lineGuidance.advice.replace(/[。；]$/,'')}，再看现实反馈是否支持继续。`:`变化仍在本卦内部展开。${mode.lens}，完成后再决定是否扩大行动。`
+  const changedCopy=changed?`${changed.name}卦提示一种可能的后续方向：“${stripTerminalPunctuation(cm.core)}”。这不是预告结果。针对${mode.label}，${mode.lens}；${stripTerminalPunctuation(lineGuidance.advice)}，再看现实反馈是否支持继续。`:`变化仍在本卦内部展开。${mode.lens}，完成后再决定是否扩大行动。`
   const stages=[
     {title:`${r.name}卦 · ${r.theme}`,copy:choose(stageOne,seed,7)},
     {title:lineGuidance.title,copy:lineGuidance.copy},
     {title:changed?`${changed.name}卦 · ${changed.theme}`:'回到现实验证',copy:changedCopy}
   ]
-  const action=choose(specificActions,seed,41).replace(/[。；]$/,'')
+  const action=stripTerminalPunctuation(choose(specificActions,seed,41))
   const highlights=[compactFocus(rm.tensions?.[0]||rm.core),compactFocus(lineModern.warning||lineModern.tension||lineModern.situation),compactFocus(action)]
   const tension=compactFocus(rm.tensions?.[0]||rm.core,26)
-  const derived=`关于“${profile.focus}”，先确认“${tension}”；再做“${compactFocus(action,32)}”。判断门槛是：${profile.evidencePrompt}`
-  return{category,profile,mode,opening,specificActions,stages,time,action,derived,lineGuidance,highlights,root:r.theme,trend:changed?.theme||'现实反馈'}
+  const derived=ensureChineseSentence(`眼下先看清${tension}。可以从“${compactFocus(action,32)}”开始，再用这个问题复核：${profile.evidencePrompt}`)
+  stages.forEach(stage=>{stage.copy=ensureChineseSentence(stage.copy)})
+  return{category,profile,mode,opening:ensureChineseSentence(opening),specificActions,stages,time,action,derived,lineGuidance,highlights,root:r.theme,trend:changed?.theme||'现实反馈'}
 }
 
 function makeDeepCards(result){
@@ -391,19 +491,19 @@ function makeDeepCards(result){
   const titles=QUESTION_CARD_TITLES[profile.category]||QUESTION_CARD_TITLES.general
   const lowerRole={1:'主动、原则与承担',2:'交流、回应与协商',3:'辨识、表达与显明',4:'启动、震动与迅速反应',5:'渗透、调整与持续影响',6:'风险、试探与信息缺口',7:'边界、停止与重新定位',8:'承载、配合与现实基础'}[result.calculation.lower]
   const upperRole={1:'主动、原则与承担',2:'交流、回应与协商',3:'辨识、表达与显明',4:'启动、震动与迅速反应',5:'渗透、调整与持续影响',6:'风险、试探与信息缺口',7:'边界、停止与重新定位',8:'承载、配合与现实基础'}[result.calculation.upper]
-  const action=(validation.do||rm.actions?.[0]||'完成一项低成本验证').replace(/[。；]$/,'')
+  const action=stripTerminalPunctuation(validation.do||rm.actions?.[0]||'完成一项低成本验证')
   const observe=validation.observe||rm.questions?.[0]||'现实中出现了什么新反馈？'
   const continueIf=validation.continue_if||`出现与“${rm.strengths?.[0]||r.theme}”一致的现实反馈。`
   const pauseIf=validation.pause_if||`出现“${rm.avoid?.[0]||rm.risks?.[0]||'代价扩大'}”的迹象。`
   return[
-    {title:titles[0],subtitle:`${profile.focus} · ${r.name}`,highlight:analysis.opening,copy:`已有依据：${s.support||rm.strengths?.[0]||r.theme} 仍需核实：${s.constraint||rm.tensions?.[0]||'愿望与条件的距离'}。`},
-    {title:titles[1],subtitle:`内在 · 自身 · 外部`,highlight:relation.interaction||`内部的“${lowerRole}”正在回应外部的“${upperRole}”。`,copy:`${relation.inner||`下卦${result.lower.name}，内部偏向${lowerRole}。`} ${relation.outer||`上卦${result.upper.name}，外部偏向${upperRole}。`} ${relation.boundary||'这里只描述互动结构，不据此断定他人的真实想法。'}`},
-    {title:titles[2],subtitle:`${result.lineReading.title} · ${line.tone||'变化'}`,highlight:le.trigger?.observe||line.signal?.meaning||line.situation,copy:`${le.trigger?.threshold||'出现可核对的新反馈后，才把它视为局面开始转向。'} ${le.decision?.pause_if||line.warning}`},
-    {title:titles[3],subtitle:`${profile.object} · 成立条件`,highlight:opportunity.condition||`当“${rm.strengths?.[0]||r.theme}”转化为真实回应时，机会才算出现。`,copy:`对“${profile.focus}”而言，${opportunity.evidence||`先用“${specificActions[1]}”取得一次可核对的反馈。`}`},
-    {title:titles[4],subtitle:`${profile.focus} · 误判点`,highlight:risk.trigger||`如果开始出现“${rm.avoid?.[0]||'忽略现实反馈'}”，风险会被放大。`,copy:`${risk.effect||`最需要防止的是：${rm.risks?.[0]||line.warning}。`} 对当前问题尤其要问：${profile.evidencePrompt}`},
+    {title:titles[0],subtitle:`${profile.focus} · ${r.name}`,highlight:analysis.opening,copy:joinChineseSentences(`已有依据：${s.support||rm.strengths?.[0]||r.theme}`,`仍需核实：${s.constraint||rm.tensions?.[0]||'愿望与条件的距离'}`)},
+    {title:titles[1],subtitle:`内在 · 自身 · 外部`,highlight:relation.interaction||`内部的“${lowerRole}”正在回应外部的“${upperRole}”。`,copy:joinChineseSentences(relation.inner||`下卦${result.lower.name}，内部偏向${lowerRole}`,relation.outer||`上卦${result.upper.name}，外部偏向${upperRole}`,relation.boundary||'这里只描述互动结构，不据此断定他人的真实想法')},
+    {title:titles[2],subtitle:`${result.lineReading.title} · ${line.tone||'变化'}`,highlight:le.trigger?.observe||line.signal?.meaning||line.situation,copy:joinChineseSentences(le.trigger?.threshold||'出现可核对的新反馈后，才把它视为局面开始转向',le.decision?.pause_if||line.warning)},
+    {title:titles[3],subtitle:`${profile.object} · 成立条件`,highlight:opportunity.condition||`当“${rm.strengths?.[0]||r.theme}”转化为真实回应时，机会才算出现。`,copy:ensureChineseSentence(`对“${profile.focus}”而言，${opportunity.evidence||`先用“${specificActions[1]}”取得一次可核对的反馈`}`)},
+    {title:titles[4],subtitle:`${profile.focus} · 误判点`,highlight:risk.trigger||`如果开始出现“${rm.avoid?.[0]||'忽略现实反馈'}”，风险会被放大。`,copy:joinChineseSentences(risk.effect||`最需要防止的是：${rm.risks?.[0]||line.warning}`,`对当前问题尤其要问：${profile.evidencePrompt}`)},
     {title:titles[5],subtitle:`${r.name} → ${changed?.name||r.name}`,highlight:paths.ready||`如果关键条件得到确认，可以小步推进。`,copy:paths.not_ready||`如果“${rm.tensions?.[0]||'关键条件'}”仍无证据支持，先停止加码，回到事实核对。`},
-    {title:titles[6],subtitle:`${profile.object} · 三步核对`,highlight:`先做：${specificActions[0]}`,copy:`接着：${specificActions[1]} 复核：${specificActions[2]} 暂停条件：${pauseIf}`}
-  ]
+    {title:titles[6],subtitle:`${profile.object} · 三步核对`,highlight:`先做：${specificActions[0]}`,copy:joinChineseSentences(`接着：${specificActions[1]}`,`复核：${specificActions[2]}`,`暂停条件：${pauseIf}`)}
+  ].map(card=>({...card,highlight:ensureChineseSentence(card.highlight),copy:ensureChineseSentence(card.copy)}))
 }
 
 async function cast(numbers,{save=true,scroll=true}={}){
@@ -423,10 +523,10 @@ function fillResult(result,{animate=false}={}){const a=makeAnalysis(result),r=re
   $('#result-index').textContent=`第 ${String(r.id).padStart(2,'0')} 卦 · ${result.lower.name}下${result.upper.name}上`;$('#result-name').textContent=r.name;$('#result-pinyin').textContent=r.pinyin.toUpperCase();$('#result-question').textContent=result.question||'未填写具体问题 · 以当下处境观照';$('#result-theme').textContent=r.theme;$('#result-reflection').textContent=result.question?a.opening:r.reflection;renderHex(result.lines,result.calculation.changingLine,{animate})
   const cards=makeDeepCards(result);cards.forEach((card,index)=>{const node=$(`[data-reading-card="${index}"]`);node.querySelector('h4').textContent=card.title;$(`#card-subtitle-${index}`).textContent=card.subtitle;$(`#card-highlight-${index}`).textContent=card.highlight;$(`#card-copy-${index}`).textContent=card.copy})
   fillReadingVisuals(result,cards);setReadingCard(0,{animate:false})
-  $('#time-label').textContent=a.time.ancientLabel;$('#derived-copy').textContent=a.derived;$('#season-note').textContent=a.time.futureLabel;$('#path-root').textContent=compactFocus(a.root,16);$('#path-trend').textContent=compactFocus(a.trend,16);$('#path-action').textContent=compactFocus(a.action,22)
+  $('#time-label').textContent=a.time.ancientLabel;$('#derived-copy').textContent=a.derived;$('#path-root').textContent=compactFocus(a.root,16);$('#path-trend').textContent=compactFocus(a.trend,16);$('#path-action').textContent=compactFocus(a.action,22)
   $('#structure-lower').textContent=`${result.lower.name} ${result.lower.symbol}`;$('#structure-upper').textContent=`${result.upper.name} ${result.upper.symbol}`;$('#structure-moving').textContent=`${result.lineReading.title} · ${lineModernOf(result).tone||'变化'}`;$('#changed-name').textContent=result.changedReading?`${result.changedReading.name}卦`:'本卦内变';$('#changed-theme').textContent=result.changedReading?.theme||'变化仍在当前卦象中展开'
 }
-function resultText(result){const a=makeAnalysis(result),cards=makeDeepCards(result);return `天地衍数｜第${result.reading.id}卦 ${result.reading.name}\n${result.question?`所问：${result.question}\n`:''}问题类型：${a.mode.label}\n数字：${result.numbers.join(' · ')}\n主题：${result.reading.theme}\n\n${cards.map(card=>`【${card.title}】${card.highlight}\n${card.copy}`).join('\n\n')}\n\n《周易》：${result.lineReading.classic}\n【因时察势】${a.derived}\n【起卦纪时】${a.time.ancientLabel}\n【候变之期】${a.time.futureLabel}\n\n传统文化参考，不作确定性预测。`}
+function resultText(result){const a=makeAnalysis(result),cards=makeDeepCards(result);return `天地衍数｜第${result.reading.id}卦 ${result.reading.name}\n${result.question?`所问：${result.question}\n`:''}问题类型：${a.mode.label}\n数字：${result.numbers.join(' · ')}\n主题：${result.reading.theme}\n\n${cards.map(card=>`【${card.title}】${card.highlight}\n${card.copy}`).join('\n\n')}\n\n《周易》：${result.lineReading.classic}\n【精炼总结】${a.derived}\n【起卦纪时】${a.time.ancientLabel}\n\n传统文化参考，不作确定性预测。`}
 
 let readingCardIndex=0
 function shortText(value,max=36){return compactFocus(String(value||'—').replace(/[。；]$/,''),max)}
@@ -469,7 +569,7 @@ function initReadingDeck(){
   $('.deck-prev').addEventListener('click',()=>setReadingCard(readingCardIndex-1,{focus:true}));$('.deck-next').addEventListener('click',()=>setReadingCard(readingCardIndex+1,{focus:true}))
   deck.addEventListener('keydown',event=>{if(['ArrowLeft','ArrowRight','Home','End'].includes(event.key)){event.preventDefault();const target=event.key==='Home'?0:event.key==='End'?cards.length-1:readingCardIndex+(event.key==='ArrowRight'?1:-1);setReadingCard(target,{focus:true})}})
   let startX=null,dragX=0
-  deck.addEventListener('pointerdown',event=>{if(event.pointerType==='mouse'&&event.button!==0)return;startX=event.clientX;dragX=0;deck.classList.add('is-dragging');deck.setPointerCapture?.(event.pointerId)})
+  deck.addEventListener('pointerdown',event=>{if(event.target.closest('.reading-card.is-active p,.reading-card.is-active strong')||(event.pointerType!=='mouse'&&event.target.closest('.reading-card.is-active')))return;if(event.pointerType==='mouse'&&event.button!==0)return;startX=event.clientX;dragX=0;deck.classList.add('is-dragging');deck.setPointerCapture?.(event.pointerId)})
   deck.addEventListener('pointermove',event=>{if(startX===null||reducedMotion.matches)return;dragX=Math.max(-86,Math.min(86,event.clientX-startX));cards.forEach((card,cardIndex)=>{const distance=deckDistance(cardIndex,readingCardIndex,cards.length),abs=Math.abs(distance);if(abs>2)return;const x=distance*clampDeckSpacing()+dragX*.42,rotation=distance*1.35+dragX*.018;window.gsap?.set(card,{x,rotation})})})
   const finishDrag=event=>{if(startX===null)return;deck.releasePointerCapture?.(event.pointerId);deck.classList.remove('is-dragging');const delta=dragX;startX=null;dragX=0;if(Math.abs(delta)>38){navigator.vibrate?.(8);setReadingCard(readingCardIndex+(delta<0?1:-1))}else setReadingCard(readingCardIndex)}
   deck.addEventListener('pointerup',finishDrag);deck.addEventListener('pointercancel',finishDrag)
@@ -544,30 +644,41 @@ function initGSAPMotion(){
     if(context.conditions.reduce)return
     const intro=gsap.timeline({defaults:{ease:'power3.out'},onComplete:()=>ScrollTrigger.refresh()})
     intro.from('.topbar',{autoAlpha:0,y:-10,duration:.38})
-      .from(['.intro-stage h1 span','.intro-stage h1 em','.hero-note-left','.hero-note-right','.intro-stage .scroll-cue'],{autoAlpha:0,y:20,duration:.62,stagger:.07},.06)
+      .from(['.intro-stage h1 span','.intro-stage h1 em','.hero-note-left','.hero-note-right','.hero-trust-mobile','.intro-stage .scroll-cue'],{autoAlpha:0,y:20,duration:.62,stagger:.07},.06)
 
     const coinTimeline=gsap.timeline({
       scrollTrigger:context.conditions.desktop?{
         id:'coin-scroll',trigger:'.coin-stage',start:'top top',end:'bottom bottom',
-        pin:'.coin-scene',pinSpacing:false,scrub:.52,anticipatePin:1,invalidateOnRefresh:true
+        pin:'.coin-scene',pinSpacing:false,scrub:.7,anticipatePin:1,invalidateOnRefresh:true
       }:{
-        id:'coin-scroll',trigger:'.coin-stage',start:'top 80%',end:'bottom 20%',
-        scrub:.4,invalidateOnRefresh:true
+        id:'coin-scroll',trigger:'.coin-stage',start:'top 72%',end:'bottom 24%',
+        scrub:.82,invalidateOnRefresh:true
       }
     })
+    const coinWords=gsap.utils.toArray('.coin-wordmark span')
+    const wordEnter=context.conditions.mobile
+      ? {autoAlpha:.08,x:0,y:index=>index===0?-112:112,scale:.68}
+      : {autoAlpha:.1,x:index=>index===0?-46:46,y:0,scale:1}
+    const wordSettle={autoAlpha:1,x:0,y:0,scale:1,duration:.34,ease:'sine.out'}
+    const wordExit=context.conditions.mobile
+      ? {autoAlpha:.08,x:0,y:index=>index===0?-112:112,scale:.68,duration:.34,ease:'sine.in'}
+      : {autoAlpha:.1,x:index=>index===0?-46:46,y:0,scale:1,duration:.34,ease:'sine.in'}
+    const coinEnter={autoAlpha:.08,y:32,scale:context.conditions.mobile ? .82 : .86,rotation:-4}
+    const coinVisible={autoAlpha:1,y:0,scale:1,rotation:0,duration:.34,ease:'sine.out',force3D:true}
+    const coinSettle={y:-3,scale:1,duration:.32,ease:'sine.inOut',force3D:true}
+    const coinExit={autoAlpha:.08,y:-36,scale:.88,rotation:4,duration:.34,ease:'sine.in',force3D:true}
+    const settleAt=.34,exitAt=.66
     coinTimeline
       .addLabel('enter',0)
-      .fromTo('.coin-wordmark span:first-child',{autoAlpha:.1,x:-46},{autoAlpha:1,x:0,duration:.28,ease:'sine.out'},'enter')
-      .fromTo('.coin-wordmark span:last-child',{autoAlpha:.1,x:46},{autoAlpha:1,x:0,duration:.28,ease:'sine.out'},'enter')
-      .fromTo('.coin-real',{autoAlpha:.08,y:32,scale:.86,rotation:-4},{autoAlpha:1,y:0,scale:1,rotation:0,duration:.28,ease:'sine.out',force3D:true},'enter')
-      .fromTo(['.coin-wrap p','.coin-note','.coin-cue'],{autoAlpha:0,y:7},{autoAlpha:1,y:0,duration:.16,ease:'sine.out',stagger:.018},'enter+=0.11')
-      .addLabel('settle',.28)
-      .to('.coin-real',{y:-3,scale:1,duration:.44,ease:'sine.inOut',force3D:true},'settle')
-      .addLabel('exit',.72)
-      .to(['.coin-wrap p','.coin-note','.coin-cue'],{autoAlpha:0,y:-7,duration:.16,ease:'sine.in',stagger:.012},'exit+=0.02')
-      .to('.coin-real',{autoAlpha:.08,y:-36,scale:.88,rotation:4,duration:.28,ease:'sine.in',force3D:true},'exit')
-      .to('.coin-wordmark span:first-child',{autoAlpha:.1,x:-46,duration:.28,ease:'sine.in'},'exit')
-      .to('.coin-wordmark span:last-child',{autoAlpha:.1,x:46,duration:.28,ease:'sine.in'},'exit')
+      .fromTo(coinWords,wordEnter,wordSettle,'enter')
+      .fromTo('.coin-real',coinEnter,coinVisible,'enter')
+      .fromTo(['.coin-wrap p','.coin-note','.coin-cue'],{autoAlpha:0,y:7},{autoAlpha:1,y:0,duration:.2,ease:'sine.out',stagger:.018},'enter+=0.12')
+      .addLabel('settle',settleAt)
+      .to('.coin-real',coinSettle,'settle')
+      .addLabel('exit',exitAt)
+      .to(['.coin-wrap p','.coin-note','.coin-cue'],{autoAlpha:0,y:-7,duration:.2,ease:'sine.in',stagger:.012},'exit+=0.02')
+      .to('.coin-real',coinExit,'exit')
+      .to(coinWords,wordExit,'exit')
 
     gsap.fromTo('.cast-card',{autoAlpha:0,y:40,scale:.975},{
       autoAlpha:1,y:0,scale:1,duration:.72,ease:'power3.out',clearProps:'opacity,visibility,transform',
@@ -662,6 +773,33 @@ function restoreReadingFromUrl(){
   window.setTimeout(()=>cast(numbers,{save:false,scroll:location.hash==='#result'}),80)
 }
 
+function scheduleHeroLiquid(){
+  const host=$('[data-liquid-ether]')
+  if(!host||reducedMotion.matches)return
+  let started=false,idleId=0,timerId=0
+  const load=()=>{
+    if(started||document.querySelector('script[data-hero-liquid]'))return
+    started=true
+    const script=document.createElement('script')
+    script.src='./assets/vendor/hero-liquid.bundle.js?v=20260811-1'
+    script.async=true
+    script.dataset.heroLiquid=''
+    script.addEventListener('error',()=>host.classList.add('is-static'),{once:true})
+    document.head.appendChild(script)
+  }
+  const queue=()=>{
+    if('requestIdleCallback'in window)idleId=window.requestIdleCallback(load,{timeout:900})
+    else timerId=window.setTimeout(load,180)
+  }
+  if(document.readyState==='complete')queue()
+  else window.addEventListener('load',queue,{once:true})
+  window.addEventListener('pagehide',()=>{
+    if(idleId&&'cancelIdleCallback'in window)window.cancelIdleCallback(idleId)
+    clearTimeout(timerId)
+  },{once:true})
+}
+
 renderCastBrushTitle();initTalismanCarousel();initContactSpecular();initContactCopy();initReadingDeck();updateEntryState();updateQuestionMode();renderHistory()
 if(!initGSAPMotion())initFallbackMotion()
+scheduleHeroLiquid()
 restoreReadingFromUrl()
