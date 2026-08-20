@@ -458,10 +458,18 @@ const QUESTION_CARD_TITLES={
 }
 function directQuestionResponse(profile,result,rm,line,actions){
   const choice=profile.alternatives.length===2?`“${profile.alternatives[0]}”和“${profile.alternatives[1]}”之间`:`“${profile.focus}”`
-  const core=compactFocus(rm.core,29),stage=compactFocus(lineModernOf(result).situation,28)
-  const openings={choice:`${choice}真正要比较的是${profile.concern}。`,yes_no:`${choice}不宜立刻二选一，先核对${profile.concern}。`,timing:`${choice}暂不宜只用日期回答，先确认时机成立的信号。`,how:`要处理${choice}，落点在${profile.concern}。`,outcome:`${choice}的结果不能由卦象预定，目前能检查的是${profile.concern}。`,open:`你问到的${choice}，眼下最值得留意的是${profile.concern}。`}
-  const opening=openings[profile.form]||openings.open
-  return`${opening}${result.reading.name}提醒“${core}”；动点显示“${stage}”。先${actions[0]}，再决定是否扩大动作。`
+  const seed=`${result.question}|${result.reading.id}|direct`,core=compactFocus(rm.core,29),stage=compactFocus(line.situation,28)
+  const openings={
+    choice:[`${choice}各有代价，先比${profile.concern}。`,`这不是只看哪边更顺；${choice}要放在${profile.concern}上衡量。`],
+    yes_no:[`${choice}现在还不能只答“能”或“不能”。先看${profile.concern}。`,`与其急着给${choice}下结论，不如先核对${profile.concern}。`],
+    timing:[`${choice}的关键不是猜一个日期，而是辨认时机成立的迹象。`,`何时合适，要看条件何时真正落地。`],
+    how:[`处理${choice}，先从${profile.concern}着手。`,`这件事的落点不在多想一步，而在${profile.concern}。`],
+    outcome:[`${choice}尚未写定；眼下能看清的是${profile.concern}。`,`结果仍会随行动改变，先检查${profile.concern}。`],
+    open:[`你问到${choice}，眼下最要紧的是${profile.concern}。`,`这件事先别铺得太开，焦点在${profile.concern}。`]
+  }
+  const opening=choose(openings[profile.form]||openings.open,seed,3)
+  const bridges=[`${result.reading.name}卦的底色是“${core}”，动爻落在“${stage}”。`,`本卦所见是“${core}”；到了动爻，问题具体落在“${stage}”。`,`从${result.reading.name}卦看，${core}。动处则提醒：${stage}。`]
+  return joinChineseSentences(opening,choose(bridges,seed,11),`眼下可先${stripTerminalPunctuation(actions[0])}。`)
 }
 function updateQuestionMode(){
   const classification=classifyQuestionDetails(el.question.value),category=typeof classification==='string'?classification:classification.category,mode=QUESTION_MODES[category],container=$('#question-mode')
@@ -476,12 +484,12 @@ function modernOf(reading){return reading?.modern||{core:reading?.reflection||re
 function lineModernOf(result){const line=result.lineReading?.modern;if(line)return line;return{situation:result.lineReading?.interpretation||'变化正在当前环节显现。',tension:'愿望与现实反馈需要重新校准。',warning:'不要把一次信号直接当成最终结论。',advice:['先完成一项低成本验证。'],signal:{label:'观察',meaning:'爻辞提供的是处境线索，而非替你作决定'},tone:'变化'}}
 function makeLineGuidance(result,mode,seed){
   const number=result.calculation.changingLine,m=lineModernOf(result),isYang=Boolean(result.lines[number-1])
-  const transition=isYang?'阳爻转阴，动作宜由外放转向复核与收束':'阴爻转阳，隐而未显的条件正转为可见行动'
+  const transition=isYang?'这一动由阳转阴，力道宜从外推转为复核':'这一动由阴转阳，原先未显的条件开始进入行动'
   const advice=ensureChineseSentence(choose(m.advice||[],seed,17)||'先完成一项可验证的小调整。')
   const copies=[
-    `${concise(m.situation,82)} ${transition}。${concise(m.tension,68)} ${mode.lens}。`,
-    `${stripTerminalPunctuation(m.signal?.meaning||'爻辞提示重新观察现实条件')}。${transition}。针对${mode.label}，${mode.lens}；眼下可做的是：${advice}`,
-    `${ensureChineseSentence(concise(m.tension,72))}${ensureChineseSentence(concise(m.warning,70))}对${mode.label}类问题，${mode.lens}；因而可以从“${stripTerminalPunctuation(advice)}”开始。`
+    joinChineseSentences(concise(m.situation,82),transition,concise(m.tension,68),advice),
+    joinChineseSentences(stripTerminalPunctuation(m.signal?.meaning||'爻辞把注意力带回现实条件'),transition,advice,concise(m.warning,70)),
+    joinChineseSentences(concise(m.tension,72),concise(m.warning,70),`可以从“${stripTerminalPunctuation(advice)}”开始。`)
   ]
   return{title:`${result.lineReading.title} · ${m.tone||'动点'}`,classic:result.lineReading.classic,copy:ensureChineseSentence(choose(copies,seed,29)),advice,signal:m.signal?.label||'观察'}
 }
@@ -489,13 +497,18 @@ function makeAnalysis(result){
   const category=classifyQuestion(result.question),profile=extractQuestionProfile(result.question,category),mode=QUESTION_MODES[category],seed=`${result.question}|${result.numbers.join('-')}|${result.reading.id}`,r=result.reading,rm=modernOf(r),changed=result.changedReading,cm=modernOf(changed),time=seasonalContext(),lineGuidance=makeLineGuidance(result,mode,seed),lineModern=lineModernOf(result),specificActions=questionSpecificActions(profile,rm,lineModern)
   const opening=directQuestionResponse(profile,result,rm,lineModern,specificActions)
   const subject=result.question?`“${result.question}”`:'这件事'
-  const openings=[`${subject}落在${r.name}卦，首先映出的是`,`${r.name}卦没有替${subject}下结论，它先照见`, `面对${subject}，本卦把注意力带到`]
+  const openings=[`${subject}落在${r.name}卦，先映出`,`${r.name}卦先照见`, `面对${subject}，本卦把视线带到`]
   const stageOne=[
-    `${choose(openings,seed)}“${rm.core}”。已有的支点是${rm.strengths?.[0]||r.theme}，但不要忽略${rm.risks?.[0]||'现实反馈'}。`,
-    `${subject}当前可从“${r.theme}”理解：${rm.core}。先确认${rm.strengths?.[0]||'哪些条件已经存在'}，再处理${rm.tensions?.[0]||'愿望与现实之间的距离'}。`,
-    `本卦的底色是“${r.theme}”。对${subject}而言，可用“${rm.questions?.[0]||'什么事实最值得先确认？'}”重新检查眼前条件。`
+    `${choose(openings,seed)}“${rm.core}”。手里已有${rm.strengths?.[0]||r.theme}；真正要防的是${rm.risks?.[0]||'过早作结'}。`,
+    `${subject}可以从“${r.theme}”来读：${rm.core}。已有${rm.strengths?.[0]||'可用条件'}，但${rm.tensions?.[0]||'愿望与现实之间仍有距离'}。`,
+    `本卦底色是“${r.theme}”。不妨问自己：${rm.questions?.[0]||'什么事实最值得先确认？'}`
   ]
-  const changedCopy=changed?`${changed.name}卦提示一种可能的后续方向：“${stripTerminalPunctuation(cm.core)}”。这不是预告结果。针对${mode.label}，${mode.lens}；${stripTerminalPunctuation(lineGuidance.advice)}，再看现实反馈是否支持继续。`:`变化仍在本卦内部展开。${mode.lens}，完成后再决定是否扩大行动。`
+  const changedCopies=changed?[
+    `变至${changed.name}，后续可能转向“${stripTerminalPunctuation(cm.core)}”。先做“${stripTerminalPunctuation(lineGuidance.advice)}”，看条件是否真的跟上。`,
+    `${changed.name}卦不是结果预告，它只是把下一段的重点放在“${stripTerminalPunctuation(cm.core)}”。行动之后，再拿新事实回来核对。`,
+    `若局面继续变化，${changed.name}卦所示的“${stripTerminalPunctuation(cm.core)}”会成为新的课题。现在不必提前越过眼前这一步。`
+  ]:[`变化尚在本卦内部。先完成眼前这一步，再决定要不要加力。`]
+  const changedCopy=choose(changedCopies,seed,23)
   const stages=[
     {title:`${r.name}卦 · ${r.theme}`,copy:choose(stageOne,seed,7)},
     {title:lineGuidance.title,copy:lineGuidance.copy},
@@ -504,7 +517,8 @@ function makeAnalysis(result){
   const action=stripTerminalPunctuation(choose(specificActions,seed,41))
   const highlights=[compactFocus(rm.tensions?.[0]||rm.core),compactFocus(lineModern.warning||lineModern.tension||lineModern.situation),compactFocus(action)]
   const tension=compactFocus(rm.tensions?.[0]||rm.core,26)
-  const derived=ensureChineseSentence(`眼下先看清${tension}。可以从“${compactFocus(action,32)}”开始，再用这个问题复核：${profile.evidencePrompt}`)
+  const summaries=[`眼下先看清${tension}。从“${compactFocus(action,32)}”开始；做完后再问：${profile.evidencePrompt}`,`这次观照可收在两点：别忽略${tension}，先做“${compactFocus(action,32)}”。之后用一个新事实复核原来的判断。`,`不用急着求一个终局答案。先处理${tension}，并以“${compactFocus(action,32)}”取得一次真实回应。`]
+  const derived=ensureChineseSentence(choose(summaries,seed,53))
   stages.forEach(stage=>{stage.copy=ensureChineseSentence(stage.copy)})
   return{category,profile,mode,opening:ensureChineseSentence(opening),specificActions,stages,time,action,derived,lineGuidance,highlights,root:r.theme,trend:changed?.theme||'现实反馈'}
 }
@@ -520,11 +534,11 @@ function makeDeepCards(result){
   const continueIf=validation.continue_if||`出现与“${rm.strengths?.[0]||r.theme}”一致的现实反馈。`
   const pauseIf=validation.pause_if||`出现“${rm.avoid?.[0]||rm.risks?.[0]||'代价扩大'}”的迹象。`
   return[
-    {title:titles[0],subtitle:`${profile.focus} · ${r.name}`,highlight:analysis.opening,copy:joinChineseSentences(`已有依据：${s.support||rm.strengths?.[0]||r.theme}`,`仍需核实：${s.constraint||rm.tensions?.[0]||'愿望与条件的距离'}`)},
+    {title:titles[0],subtitle:`${profile.focus} · ${r.name}`,highlight:analysis.opening,copy:joinChineseSentences(`已经握在手里的，是${s.support||rm.strengths?.[0]||r.theme}`,`还没有坐实的，是${s.constraint||rm.tensions?.[0]||'愿望与条件的距离'}`)},
     {title:titles[1],subtitle:`内在 · 自身 · 外部`,highlight:relation.interaction||`内部的“${lowerRole}”正在回应外部的“${upperRole}”。`,copy:joinChineseSentences(relation.inner||`下卦${result.lower.name}，内部偏向${lowerRole}`,relation.outer||`上卦${result.upper.name}，外部偏向${upperRole}`,relation.boundary||'这里只描述互动结构，不据此断定他人的真实想法')},
     {title:titles[2],subtitle:`${result.lineReading.title} · ${line.tone||'变化'}`,highlight:le.trigger?.observe||line.signal?.meaning||line.situation,copy:joinChineseSentences(le.trigger?.threshold||'出现可核对的新反馈后，才把它视为局面开始转向',le.decision?.pause_if||line.warning)},
     {title:titles[3],subtitle:`${profile.object} · 成立条件`,highlight:opportunity.condition||`当“${rm.strengths?.[0]||r.theme}”转化为真实回应时，机会才算出现。`,copy:ensureChineseSentence(`对“${profile.focus}”而言，${opportunity.evidence||`先用“${specificActions[1]}”取得一次可核对的反馈`}`)},
-    {title:titles[4],subtitle:`${profile.focus} · 误判点`,highlight:risk.trigger||`如果开始出现“${rm.avoid?.[0]||'忽略现实反馈'}”，风险会被放大。`,copy:joinChineseSentences(risk.effect||`最需要防止的是：${rm.risks?.[0]||line.warning}`,`对当前问题尤其要问：${profile.evidencePrompt}`)},
+    {title:titles[4],subtitle:`${profile.focus} · 误判点`,highlight:risk.trigger||`如果开始出现“${rm.avoid?.[0]||'忽略新事实'}”，风险会被放大。`,copy:joinChineseSentences(risk.effect||`最需要防止的是${rm.risks?.[0]||line.warning}`,profile.evidencePrompt)},
     {title:titles[5],subtitle:`${r.name} → ${changed?.name||r.name}`,highlight:paths.ready||`如果关键条件得到确认，可以小步推进。`,copy:paths.not_ready||`如果“${rm.tensions?.[0]||'关键条件'}”仍无证据支持，先停止加码，回到事实核对。`},
     {title:titles[6],subtitle:`${profile.object} · 三步核对`,highlight:`先做：${specificActions[0]}`,copy:joinChineseSentences(`接着：${specificActions[1]}`,`复核：${specificActions[2]}`,`暂停条件：${pauseIf}`)}
   ].map(card=>({...card,highlight:ensureChineseSentence(card.highlight),copy:ensureChineseSentence(card.copy)}))

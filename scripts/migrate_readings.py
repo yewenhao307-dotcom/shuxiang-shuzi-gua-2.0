@@ -146,32 +146,37 @@ def modern_line(reading: dict, number: int, line: dict, profile: dict) -> dict:
         name=reading["name"], theme=reading["theme"], core=profile["core"]
     )
     signal, signal_base = signal_for(line["classic"])
-    signal_copy = f"在{reading['name']}第{number}爻里，{signal_base}，可用“{profile['questions'][0].rstrip('？?')}”核对判断"
-    situation = f"{situation_base}，这是{reading['name']}第{number}爻呈现的具体处境，其观察重点是：{profile['core']}。"
+    question = profile["questions"][0].rstrip("？?")
+    signal_copy = f"{signal_base}。可借“{question}”核对眼下判断"
+    situation = f"{situation_base}。"
     tension_frames = (
         "{position_tension}，而{hex_tension}也会在这一爻变得具体。",
-        "此时一面是{position_tension}，另一面是{hex_tension}，两者要放在同一次权衡里。",
-        "真正的拉扯来自{hex_tension}，爻位又使{position_tension}成为眼前问题。",
-        "若只顾推进，容易忽略{position_tension}，若只顾防守，又会放大{hex_tension}。",
+        "{position_tension}；与此同时，{hex_tension}。",
+        "眼前的难处在{hex_tension}，而{position_tension}让取舍更具体。",
+        "推进之前要顾到{position_tension}，也不能回避{hex_tension}。",
+        "{hex_tension}。到了这一位置，{position_tension}尤其值得留意。",
     )
-    tension = f"就{reading['name']}第{number}爻而言，" + tension_frames[(reading["id"] + number * 2) % len(tension_frames)].format(
+    tension = tension_frames[(reading["id"] + number * 2) % len(tension_frames)].format(
         position_tension=position["tension"], hex_tension=profile["tensions"][0]
     )
-    warning_base = WARNING_FRAMES[(reading["id"] * 3 + number) % len(WARNING_FRAMES)].format(
-        risk=profile["risks"][0], avoid=profile["avoid"][0]
-    ).rstrip("。")
-    warning = f"{warning_base}，而{reading['name']}第{number}爻处在“{position['tone']}”阶段，还需防止{position['risk']}。"
+    warning_frames = (
+        f"要防的是{profile['risks'][0]}。",
+        f"别把“{profile['avoid'][0]}”当成解决办法。",
+        f"这一阶段容易{position['risk']}。",
+        f"若出现{profile['risks'][0]}，先收一收动作。",
+    )
+    warning = warning_frames[(reading["id"] * 3 + number) % len(warning_frames)]
     advice = [
-        f"{reading['name']}第{number}爻可先{position['actions'][0]}，同时落实“{profile['actions'][0]}”，用结果检验这条思路是否具备真实条件。",
-        f"{reading['name']}第{number}爻可从“{position['actions'][1]}”开始，并围绕“{profile['questions'][0].rstrip('？?')}”复盘这一步，而非提前宣布结果。",
+        f"{position['actions'][0]}，再落实“{profile['actions'][0]}”。",
+        f"先{position['actions'][1]}；做完后回看“{question}”。",
     ]
     interpretation_frames = (
-        "{situation}{signal_copy}。{tension}{warning}{advice}",
-        "{signal_copy}。{situation}{warning}{tension}{advice}",
-        "{tension}{situation}{signal_copy}。{advice}{warning}",
-        "{situation}{tension}{advice}{signal_copy}。{warning}",
-        "{warning}{signal_copy}。{situation}{tension}{advice}",
-        "{tension}{signal_copy}。{warning}{situation}{advice}",
+        "{situation}{tension}{warning}{advice}",
+        "{signal_copy}。{situation}{advice}{warning}",
+        "{tension}{situation}{advice}{warning}",
+        "{situation}{warning}{signal_copy}。{advice}",
+        "{warning}{situation}{tension}{advice}",
+        "{signal_copy}。{tension}{advice}{warning}",
     )
     interpretation = interpretation_frames[(reading["id"] + number) % len(interpretation_frames)].format(
         situation=situation, signal_copy=signal_copy, tension=tension, warning=warning, advice=advice[(reading["id"] + number) % 2]

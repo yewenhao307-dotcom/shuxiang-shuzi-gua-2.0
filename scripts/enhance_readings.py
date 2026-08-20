@@ -77,6 +77,9 @@ def warning_core(text: str) -> str:
 def signal_summary(label: str) -> str:
     return {
         "暂停": "现实条件尚不足以支持扩大动作",
+        "止损": "风险已经露头，需要先缩小暴露面",
+        "通达": "眼前阻力较少，但承载力仍要跟上",
+        "可行": "已有可用条件，下一步在于把它落实",
         "有利": "关键条件开始出现可利用的现实回应",
         "守正": "做法、位置与责任边界能够保持一致",
         "修正": "原有做法显出明确代价，需要及时调整",
@@ -104,32 +107,32 @@ def enhance_hexagram(reading: dict) -> None:
 
     modern["extended"] = {
         "situation": {
-            "direct": f"眼下的重点是{first_sentence(modern['core'], 64)}。",
-            "support": f"已经可以利用的是：{strength}。",
-            "constraint": f"仍需核实的是：{tension}。",
+            "direct": ensure_period(first_sentence(modern['core'], 64)),
+            "support": ensure_period(strength),
+            "constraint": ensure_period(tension),
         },
         "relationship": {
             "inner": f"下卦{lower_name}，内部动力偏向{lower_role}。",
             "outer": f"上卦{upper_name}，外部处境更受{upper_role}影响。",
-            "interaction": f"内部想以“{lower_role}”回应外部的“{upper_role}”；两边能否对接，要看“{tension}”是否得到确认。",
+            "interaction": f"内部偏向{lower_role}，外部则更受{upper_role}影响；两者相接时，{tension}。",
             "boundary": "这里只描述互动结构，不据此断定他人的真实想法。",
         },
         "opportunity": {
             "condition": f"当“{strength}”能够转化为真实回应、资源或权限时，机会才算出现。",
-            "evidence": f"先用“{action}”取得一次可核对的反馈。",
+            "evidence": f"先做一遍“{action}”，看现实如何回应。",
         },
         "risk": {
             "trigger": f"如果开始出现“{avoid}”，风险会被放大。",
             "effect": f"最需要防止的是：{risk}。",
         },
         "paths": {
-            "ready": f"如果关键条件得到确认，可以继续“{action}”，但仍以小步反馈决定是否扩大。",
-            "not_ready": f"如果“{tension}”仍无证据支持，先停止加码，回到事实核对与边界澄清。",
+            "ready": f"条件若已落地，可以继续“{action}”，但不必一下铺开。",
+            "not_ready": f"若{tension}仍悬而未决，先停在这里，把事实和边界问清。",
         },
         "validation": {
             "do": action,
             "observe": question.rstrip("？?") + "？",
-            "continue_if": f"出现与“{strength}”一致的现实反馈，而且新增代价仍可承受。",
+            "continue_if": f"{strength}不只停在设想里，新增代价也仍可承受。",
             "pause_if": f"出现“{avoid}”或“{risk}”的迹象。",
         },
     }
@@ -148,26 +151,40 @@ def enhance_line(reading: dict, number: int, line: dict) -> None:
     modern["tension"] = ensure_period(tension)
     modern["warning"] = ensure_period(warning)
     modern["advice"] = list(dict.fromkeys(ensure_period(quoted_action(item)) for item in modern.get("advice", []) if item))
+    observe_frames = (
+        f"接下来留意：{signal_meaning}。",
+        f"先看现实里是否出现这样的迹象：{signal_meaning}。",
+        f"判断有没有变化，关键看{signal_meaning}。",
+    )
+    threshold_frames = (
+        f"“{advice}”做过以后，再比较前后的差别。",
+        f"若没有新的事实出现，就不急着把它解释成转机。",
+        f"这一步能带来可核对的变化，才算条件开始松动。",
+    )
     modern["extended"] = {
         "trigger": {
             "label": signal.get("label", "观察"),
-            "observe": f"完成“{advice}”后，观察是否出现“{signal_meaning}”的现实反馈。",
-            "threshold": f"只有当现实中出现与“{advice}”相关的反馈，才把它视为局面开始转向。",
+            "observe": observe_frames[(reading["id"] + number) % len(observe_frames)],
+            "threshold": threshold_frames[(reading["id"] * 2 + number) % len(threshold_frames)],
         },
         "decision": {
-            "continue_if": f"若反馈支持“{advice}”，可以保持小步推进。",
-            "pause_if": f"若出现“{warning}”，先暂停扩大投入。",
+            "continue_if": f"若“{advice}”确实带来改善，可以沿这个方向再走一步。",
+            "pause_if": f"一旦出现“{warning}”，就先停下来复核。",
         },
         "action": {
             "do": advice,
-            "review": f"完成后记录{reading['name']}{line['title']}所指环节的事实变化，不用一次结果替代长期判断。",
+            "review": f"做完后记下前后变化，不用一次结果代替长期判断。",
         },
     }
 
+    situation_sentence = ensure_period(situation)
+    tension_sentence = ensure_period(tension)
+    warning_sentence = ensure_period(warning)
+    advice_sentence = ensure_period(advice)
     variants = (
-        f"{situation} 当前拉扯在于：{tension} 当{signal_meaning}时，变化才有现实依据。先做“{advice}”；若出现“{warning}”，就暂停扩大动作。",
-        f"这一爻把变化落在具体环节：{situation} {signal_meaning}，是接下来值得核对的信号。完成“{advice}”后再看反馈；同时留意{warning}。",
-        f"局面正在显出边界：{situation} {tension} 可以用“{advice}”做一次验证；若{warning}，行动应当收束。",
+        f"{situation_sentence}{tension_sentence}眼下可先“{advice}”。{warning_sentence}",
+        f"{situation_sentence}{signal_meaning}，是接下来要看的信号。{advice_sentence}{warning_sentence}",
+        f"{situation_sentence}{warning_sentence}不妨从“{advice}”开始，再看局面有没有实质变化。",
     )
     line["interpretation"] = variants[(reading["id"] + number) % len(variants)]
 
