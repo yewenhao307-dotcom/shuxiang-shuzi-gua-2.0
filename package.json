@@ -1,0 +1,15 @@
+{
+  "name": "tiandi-yanshu",
+  "private": true,
+  "scripts": {
+    "build": "node scripts/build-static.mjs",
+    "test": "npm run test:intent && npm run test:support && npm run test:copy",
+    "test:intent": "node scripts/test-question-intent.mjs",
+    "test:support": "node scripts/test-supportive-reading.mjs",
+    "test:copy": "node scripts/test-reading-copy.mjs"
+  },
+  "dependencies": {
+    "motion": "^13.0.0",
+    "three": "0.180.0"
+  }
+}

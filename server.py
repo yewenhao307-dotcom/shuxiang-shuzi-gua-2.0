@@ -1,32 +1,84 @@
 from http.server import ThreadingHTTPServer, SimpleHTTPRequestHandler
 from pathlib import Path
+from urllib.parse import unquote, urlsplit
+import os
 import socket
 import threading
 import webbrowser
 
-ROOT = Path(__file__).resolve().parent
 
-def find_port(start=8787, attempts=30):
+ROOT = Path(__file__).resolve().parent
+CONTENT_SECURITY_POLICY = (
+    "default-src 'self'; base-uri 'self'; object-src 'none'; frame-src 'none'; "
+    "frame-ancestors 'none'; form-action 'self'; script-src 'self'; "
+    "script-src-attr 'none'; style-src 'self' 'unsafe-inline'; "
+    "img-src 'self' data: blob:; font-src 'self' data:; connect-src 'self'; "
+    "worker-src 'self' blob:; manifest-src 'self'; media-src 'none'"
+)
+
+
+def find_port(host, start=8787, attempts=30):
     for port in range(start, start + attempts):
         with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as probe:
             try:
-                probe.bind(("127.0.0.1", port))
+                probe.bind((host, port))
                 return port
             except OSError:
                 continue
     raise RuntimeError("找不到可用端口。")
 
+
+def find_lan_ip():
+    try:
+        with socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as probe:
+            probe.connect(("192.0.2.1", 80))
+            return probe.getsockname()[0]
+    except OSError:
+        try:
+            return socket.gethostbyname(socket.gethostname())
+        except OSError:
+            return None
+
+
 class AppHandler(SimpleHTTPRequestHandler):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, directory=str(ROOT), **kwargs)
+
+    def do_GET(self):
+        path = unquote(urlsplit(self.path).path)
+        requested_file = ROOT / path.lstrip("/")
+        looks_like_page_route = "." not in Path(path).name
+
+        # Browser history or mistyped wildcard routes such as /** should still
+        # open this single-page site. Existing assets keep their normal paths.
+        if path != "/" and looks_like_page_route and not requested_file.exists():
+            self.path = "/index.html"
+
+        super().do_GET()
+
     def end_headers(self):
+        self.send_header("Content-Security-Policy", CONTENT_SECURITY_POLICY)
+        self.send_header("X-Frame-Options", "DENY")
+        self.send_header("X-Content-Type-Options", "nosniff")
+        self.send_header("Referrer-Policy", "strict-origin-when-cross-origin")
+        self.send_header(
+            "Permissions-Policy",
+            "camera=(), microphone=(), geolocation=(), browsing-topics=()",
+        )
         self.send_header("Cache-Control", "no-store")
         super().end_headers()
 
+
 if __name__ == "__main__":
-    port = find_port()
-    url = f"http://127.0.0.1:{port}"
-    print(f"天地衍数已启动：{url}")
+    host = os.getenv("TIANDI_HOST", "0.0.0.0").strip() or "0.0.0.0"
+    port = find_port(host)
+    local_url = f"http://127.0.0.1:{port}/"
+    print(f"天地衍数已启动（电脑）：{local_url}")
+    if host == "0.0.0.0":
+        lan_ip = find_lan_ip()
+        if lan_ip:
+            print(f"同一 Wi-Fi 下手机访问：http://{lan_ip}:{port}/")
     print("关闭此窗口即可停止网站。")
-    threading.Timer(0.8, lambda: webbrowser.open(url)).start()
-    ThreadingHTTPServer(("127.0.0.1", port), AppHandler).serve_forever()
+    if os.getenv("TIANDI_OPEN_BROWSER", "1") != "0":
+        threading.Timer(0.8, lambda: webbrowser.open(local_url)).start()
+    ThreadingHTTPServer((host, port), AppHandler).serve_forever()

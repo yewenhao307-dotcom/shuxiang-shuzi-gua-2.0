@@ -1,0 +1,48 @@
+.shiny-text {
+  display: inline-block;
+  color: var(--shiny-base, currentColor);
+}
+
+.hero-shiny-line {
+  width: max-content;
+  max-width: 100%;
+  text-wrap: nowrap;
+}
+
+@keyframes hero-fantasy-shine {
+  0%, 12% { background-position: 150% center; }
+  68%, 100% { background-position: -50% center; }
+}
+
+.shiny-text.is-shiny-ready {
+  background-image: linear-gradient(
+    var(--shiny-spread, 120deg),
+    var(--shiny-base, currentColor) 0%,
+    var(--shiny-base, currentColor) 40%,
+    var(--shiny-accent-start, #d2b777) 46%,
+    var(--shiny-highlight, #fff) 50%,
+    var(--shiny-accent-end, #8f657b) 54%,
+    var(--shiny-base, currentColor) 60%,
+    var(--shiny-base, currentColor) 100%
+  );
+  background-size: 185% auto;
+  background-position: 150% center;
+  background-repeat: repeat-x;
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  animation: hero-fantasy-shine var(--shiny-cycle, 3.6s) cubic-bezier(.45,0,.2,1) var(--shiny-phase-delay, 0s) infinite;
+}
+
+.shiny-text.is-shiny-ready.is-shiny-reverse { animation-direction: reverse; }
+.shiny-text.is-shiny-ready.is-shiny-yoyo { animation-direction: alternate; }
+
+@media (prefers-reduced-motion: reduce) {
+  .shiny-text,
+  .shiny-text.is-shiny-ready {
+    color: var(--shiny-base, currentColor);
+    background-image: none !important;
+    animation: none !important;
+    -webkit-text-fill-color: currentColor;
+  }
+}
