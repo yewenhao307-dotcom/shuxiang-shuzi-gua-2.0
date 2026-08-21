@@ -28,7 +28,8 @@ for (const reading of readings) {
 const allCopy = `${JSON.stringify(readings)}\n${appSource}`;
 const banned = [
   '结合本卦', '未来不是既定结果', '叠加本卦与变卦', '更适合把注意力放在',
-  '这卦支持你', '这卦反对你', '卦象要求你', '先识别……再观察……最后……'
+  '这卦支持你', '这卦反对你', '卦象要求你', '先识别……再观察……最后……',
+  '二十年临床', '创伤残留', '五行对应脏腑', '应期参考', '肯定能发财', '最终结果'
 ];
 for (const phrase of banned) assert.ok(!allCopy.includes(phrase), `仍含模板化表达：${phrase}`);
 

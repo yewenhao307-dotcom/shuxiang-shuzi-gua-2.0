@@ -325,19 +325,23 @@ function compactFocus(text,max=28){
 const QUESTION_MODES={
   decision:{label:'选择判断',heading:'条件 · 代价 · 试行',kicker:'围绕选择本身拆开来看',stageLabels:['成立条件','关键取舍','验证一步'],lens:'先把两个选项各自的成立条件写清，不把焦虑误当成答案'},
   career:{label:'事业工作',heading:'局面 · 资源 · 推进',kicker:'从职责、资源与现实反馈观照',stageLabels:['当前局面','资源阻力','推进方式'],lens:'区分职责、资源与个人期待，先处理最影响结果的一个环节'},
-  relationship:{label:'关系沟通',heading:'感受 · 边界 · 对话',kicker:'把双方处境与边界放在一起看',stageLabels:['关系底色','互动张力','沟通落点'],lens:'先描述事实和自己的需要，再邀请对方回应，避免替对方下结论'},
+  relationship:{label:'爱情关系',heading:'感受 · 边界 · 对话',kicker:'把双方处境与边界放在一起看',stageLabels:['关系底色','互动张力','沟通落点'],lens:'先描述事实和自己的需要，再邀请对方回应，避免替对方下结论'},
+  family:{label:'亲情家庭',heading:'角色 · 边界 · 支持',kicker:'分清责任、期待与可以提供的支持',stageLabels:['家庭处境','角色张力','支持方式'],lens:'尊重亲情并不等于承担全部责任，先说清自己的能力和边界'},
   resources:{label:'金钱资源',heading:'基础 · 风险 · 边界',kicker:'以承受能力和退出条件为尺',stageLabels:['资源基础','主要风险','控制边界'],lens:'先核对损失上限、期限与退出条件，重要决定仍应参考专业意见'},
   study:{label:'学习成长',heading:'基础 · 卡点 · 练习',kicker:'从反馈循环而非一次成败观照',stageLabels:['已有基础','学习卡点','练习方向'],lens:'把目标缩成一次可获得反馈的练习，再按结果调整方法'},
   wellbeing:{label:'身心状态',heading:'状态 · 消耗 · 支持',kicker:'以休息、边界和现实支持为先',stageLabels:['状态线索','消耗来源','支持动作'],lens:'优先照顾睡眠、节奏和支持系统；若持续不适，请及时寻求专业帮助'},
+  life:{label:'生活日常',heading:'节奏 · 消耗 · 调整',kicker:'从日常安排和现实承受力着手',stageLabels:['生活底色','主要消耗','调整一步'],lens:'先改变一个重复消耗你的环节，再观察生活是否恢复余地'},
   general:{label:'综合观照',heading:'处境 · 动点 · 路径',kicker:'从当前事实走向可验证的一步',stageLabels:['处境底色','正在变化','行动路径'],lens:'先分清事实、感受和推测，再选一件可以验证的小事'}
 }
 const QUESTION_MARKERS={
   decision:['是否','要不要','该不该','值不值得','能不能','可不可以','适合吗','还是','选择','决定','怎么选','如何选','哪一个','哪个更','去留','离开','辞职','换工作','继续吗'],
-  relationship:['感情','关系','恋爱','婚姻','伴侣','对象','恋人','心上人','意中人','第三者','喜欢','复合','分手','结婚','迎娶','娶到','嫁给','白月光','出轨','背叛','忠诚','外遇','婚外情','劈腿','暧昧','相处','联系','沟通','朋友','家人','对方'],
+  relationship:['感情','恋爱','婚姻','伴侣','对象','恋人','心上人','意中人','第三者','喜欢','复合','分手','结婚','迎娶','娶到','嫁给','白月光','出轨','背叛','忠诚','外遇','婚外情','劈腿','暧昧','相处','联系','沟通','对方'],
+  family:['亲情','家庭','家人','父母','爸爸','妈妈','母亲','父亲','孩子','子女','儿子','女儿','兄弟','姐妹','亲戚','婆婆','公公','岳父','岳母','赡养','养老'],
   resources:['投资','理财','股票','基金','生意','收入','赚钱','挣钱','发财','财运','工资','薪资','利润','盈利','回报','钱','资金','财务','现金流','收益','亏损','损失','买房','借钱','借款','还钱','贷款','债务','预算','成本','资产','存款','财富','资源'],
   career:['工作','事业','职业','项目','求职','面试','晋升','升职','辞职','离职','跳槽','创业','合作','客户','团队','岗位','职场'],
   study:['学习','考试','考研','备考','读书','课程','技能','证书','论文','学校','专业','成长'],
-  wellbeing:['健康','身体','情绪','焦虑','睡眠','压力','疲惫','内耗','康复','身心']
+  wellbeing:['健康','身体','情绪','焦虑','睡眠','压力','疲惫','内耗','康复','身心'],
+  life:['生活','日常','作息','习惯','搬家','居住','通勤','安排','节奏','琐事','环境','适应']
 }
 const QUESTION_CONTEXT_SIGNALS={
   resources:[
@@ -347,31 +351,37 @@ const QUESTION_CONTEXT_SIGNALS={
   ],
   relationship:[
     {pattern:/(?:复合|分手|结婚|迎娶|娶到|嫁给|白月光|心上人|意中人|第三者|离婚|相处|吵架|争吵|冷战|表白|出轨|背叛|忠诚|外遇|婚外情|劈腿|暧昧|感情|婚姻|关系|爱不爱|还爱|沟通|联系)/,weight:5},
-    {pattern:/(?:女朋友|男朋友|伴侣|对象|爱人|家人|朋友|对方)/,weight:1}
+    {pattern:/(?:女朋友|男朋友|伴侣|对象|爱人|对方)/,weight:2}
   ],
+  family:[{pattern:/(?:亲情|家庭|家人|父母|爸爸|妈妈|母亲|父亲|孩子|子女|儿子|女儿|兄弟|姐妹|亲戚|婆婆|公公|岳父|岳母|赡养|养老)/,weight:6}],
   career:[
     {pattern:/(?:升职|晋升|跳槽|辞职|离职|入职|求职|面试|职业|岗位|职场|工作|事业|项目|创业|客户|团队)/,weight:5},
     {pattern:/(?:加薪|绩效|奖金)/,weight:6}
   ],
   study:[{pattern:/(?:考试|考研|备考|录取|论文|课程|学习|学校|专业|证书|成绩|分数)/,weight:5}],
-  wellbeing:[{pattern:/(?:健康|身体|情绪|焦虑|睡眠|压力|疲惫|内耗|康复|疼痛|症状|身心)/,weight:5}]
+  wellbeing:[{pattern:/(?:健康|身体|情绪|焦虑|睡眠|压力|疲惫|内耗|康复|疼痛|症状|身心)/,weight:5}],
+  life:[{pattern:/(?:日常|作息|习惯|搬家|居住|通勤|生活安排|生活节奏|生活状态|生活环境|适应新环境|琐事)/,weight:5}]
 }
 const QUESTION_TERMINAL_INTENTS=[
   {key:'relationship',pattern:/(?:出轨|背叛|有外遇|外遇|劈腿|暧昧|分手|复合|离婚|结婚|表白|原谅|吵架|争吵|冷战|相处|联系|沟通)(?:吗|呢|怎么办|该怎么办|如何|怎么处理|会怎样)?[？?。！!]*$/},
+  {key:'family',pattern:/(?:赡养|养老|亲子关系|家庭关系|和父母|与父母|和孩子|与孩子|家里人)(?:吗|呢|怎么办|该怎么办|如何|怎么处理|会怎样)?[？?。！!]*$/},
   {key:'resources',pattern:/(?:赚钱|挣钱|发财|赚到|挣到|拿到|得到|损失|亏掉|赔掉|借到|还清|回本|盈利|亏损|投资|理财|买房|买车|多少钱)[^？?。！!]{0,12}(?:吗|呢|怎么办|该怎么办|如何|会怎样)?[？?。！!]*$/},
   {key:'career',pattern:/(?:升职|晋升|跳槽|辞职|离职|换工作|入职|找到工作|创业|加薪)(?:吗|呢|怎么办|该怎么办|如何|会怎样)?[？?。！!]*$/},
   {key:'study',pattern:/(?:考上|录取|通过考试|毕业|选专业|报考)(?:吗|呢|怎么办|该怎么办|如何|会怎样)?[？?。！!]*$/},
   {key:'wellbeing',pattern:/(?:失眠|焦虑|疲惫|内耗|康复|好起来|缓解)(?:吗|呢|怎么办|该怎么办|如何|会怎样)?[？?。！!]*$/}
 ]
 const QUESTION_STRONG_CORE_INTENTS=[
+  {key:'family',pattern:/(?:父母|爸爸|妈妈|母亲|父亲|孩子|子女|儿子|女儿|兄弟|姐妹|亲戚|婆婆|公公|岳父|岳母|家里人|亲情|赡养|养老)/},
   {key:'relationship',pattern:/(?:不再?|不会?|没有)?(?:出轨|背叛|外遇|婚外情|劈腿)|(?:忠诚|变心|第三者)/}
 ]
 const QUESTION_INTENT_EXAMPLES={
   relationship:['我和喜欢的人能在一起吗','这段感情会有结果吗','伴侣会不会背叛我','我们是否适合结婚','怎样修复两个人的关系','对方还在意我吗'],
+  family:['我和父母总是争吵怎么办','家里人能不能理解我','怎样和孩子建立边界','家庭责任应该怎么分','如何面对父母的期待','亲人之间怎样恢复沟通'],
   resources:['这笔投资能不能回本','我什么时候能赚到钱','现在适合买房吗','这笔借款能收回来吗','收入能否覆盖支出','应该怎样控制损失'],
   career:['这份工作还要继续吗','我能不能升职加薪','现在适合跳槽吗','这个项目能推进吗','面试会有结果吗','创业的时机成熟吗'],
   study:['这次考试能通过吗','应该选择哪个专业','学习方法需要怎么调整','论文能顺利完成吗','现在适合报考吗','怎样突破学习瓶颈'],
   wellbeing:['最近压力很大怎么办','睡眠状态什么时候改善','怎样减少情绪内耗','我需要休息一段时间吗','如何恢复生活节奏','现在的身心状态需要注意什么'],
+  life:['最近生活节奏很乱怎么办','搬家后如何适应新环境','日常安排需要怎么调整','怎样改变反复拖延的习惯','现在的生活状态需要注意什么','如何减少琐事带来的消耗'],
   decision:['两个选择应该选哪个','这件事要不要继续','现在做决定合适吗','应该留下还是离开','哪条路更适合我','是否值得尝试']
 }
 function charNgrams(value='',size=2){
@@ -408,7 +418,7 @@ function classifyQuestionDetails(question=''){
   if(strongCoreIntent)return{category:strongCoreIntent.key,focusText:text,confidence:.98,reason:'strong-core-intent',scores:[]}
   const terminalIntent=QUESTION_TERMINAL_INTENTS.find(signal=>signal.pattern.test(text))
   if(terminalIntent)return{category:terminalIntent.key,focusText:text,confidence:.99,reason:'terminal-intent',scores:[]}
-  const domains=['relationship','resources','career','study','wellbeing','decision'],scores=domains.map((key,index)=>{
+  const domains=['relationship','family','resources','career','study','wellbeing','life','decision'],scores=domains.map((key,index)=>{
     const markerScore=(QUESTION_MARKERS[key]||[]).reduce((sum,marker)=>sum+(text.includes(marker)?Math.max(1,marker.length-1):0),0)
     const contextScore=(QUESTION_CONTEXT_SIGNALS[key]||[]).reduce((sum,signal)=>sum+(signal.pattern.test(text)?signal.weight:0),0)
     const similarity=semanticExampleScore(text,key),exampleScore=similarity>=.42?similarity*4:0
@@ -421,9 +431,49 @@ function classifyQuestionDetails(question=''){
 function classifyQuestion(question=''){const result=classifyQuestionDetails(question);return typeof result==='string'?result:result.category}
 const QUESTION_ACTIONS=['离开','辞职','离职','换工作','留下','继续','推进','暂停','放弃','复合','分手','迎娶','娶到','嫁给','出轨','联系','沟通','投资','购买','借款','报考','转行','合作','创业','搬家','结婚']
 const QUESTION_TIME_MARKERS=['现在','目前','此刻','近期','最近','今年','明年','三个月内','半年内','尽快','马上','何时','什么时候']
+const QUESTION_TIME_PERSPECTIVES={
+  past:/(?:过去|以前|从前|曾经|当年|那时候|起因|根源|为什么会变成|为何会变成)/,
+  future:/(?:未来|以后|之后|将来|接下来|往后|会不会|能否|结果|何时|什么时候)/
+}
+const QUESTION_EMOTIONS={
+  anxiety:/(?:焦虑|害怕|担心|不安|紧张|迷茫|纠结|慌|恐惧)/,
+  sadness:/(?:难过|伤心|失望|痛苦|孤独|委屈|失落)/,
+  anger:/(?:生气|愤怒|恨|烦|不甘|不公平)/,
+  exhaustion:/(?:很累|疲惫|撑不住|内耗|压力大|精疲力尽)/
+}
+const SAFETY_SIGNALS={
+  crisis:/(?:自杀|轻生|不想活|结束生命|寻死|伤害自己|自残)/,
+  violence:/(?:家暴|家庭暴力|被打|人身威胁|威胁我|强迫我|限制人身自由)/,
+  medical:/(?:确诊|癌症|肿瘤|病灶|手术|用药|药物|停药|治愈|怀孕|流产|症状)/
+}
+function detectSafetyConcern(question=''){return Object.keys(SAFETY_SIGNALS).find(key=>SAFETY_SIGNALS[key].test(String(question)))||''}
+function detectEmotion(question=''){return Object.keys(QUESTION_EMOTIONS).find(key=>QUESTION_EMOTIONS[key].test(String(question)))||''}
+function detectTimePerspective(question=''){
+  const text=String(question);if(QUESTION_TIME_PERSPECTIVES.past.test(text))return'past';if(QUESTION_TIME_PERSPECTIVES.future.test(text))return'future';return'present'
+}
+function supportiveReflection(profile){
+  const copies={
+    anxiety:'听起来，你不只在问结果，也在担心判断错了以后要承担什么。',
+    sadness:'这个问题里似乎还有一部分失落，比急着知道结果更值得先被看见。',
+    anger:'你在意的可能不只是事情本身，也包括边界或公平感是否被尊重。',
+    exhaustion:'你可能已经为这件事消耗了一段时间，眼下先分清自己还能承担多少。'
+  }
+  return copies[profile.emotion]||''
+}
+function temporalGuidance(profile){
+  if(profile.timePerspective==='past')return'卦象不能倒推出未被证实的过去；可以借它检查哪些旧模式仍在今天重复。'
+  if(profile.timePerspective==='future')return'这里不预告确定结果或日期，只看哪些条件会让局面朝不同方向发展。'
+  return''
+}
+function safetyGuidance(profile){
+  if(profile.safetyConcern==='crisis')return'如果你正有伤害自己或结束生命的念头，请先不要独处，立刻联系可信任的人和当地紧急服务；卦象不能处理眼前的安全风险。'
+  if(profile.safetyConcern==='violence')return'如果其中有人身威胁、暴力或强迫，请先离开危险处境，并联系可信任的人或当地紧急服务；此时不应以卦象替代安全判断。'
+  if(profile.safetyConcern==='medical')return'卦象不能判断疾病、病灶、用药或治疗效果；身体不适请以合格医疗专业人员的评估为准，以下只讨论压力、节奏和可观察的生活影响。'
+  return''
+}
 function cleanQuestionPart(value=''){return String(value).replace(/[“”"'？?。！!，,；;：:]/g,'').replace(/^(我|我们|自己|此刻|现在|目前)/,'').replace(/(?:吗|呢)$/,'').trim()}
 function extractQuestionProfile(question='',category=classifyQuestion(question)){
-  const raw=String(question||'').trim(),intentText=extractQuestionIntentText(raw),plain=cleanQuestionPart(intentText),time=QUESTION_TIME_MARKERS.find(marker=>raw.includes(marker))||''
+  const raw=String(question||'').trim(),intentText=extractQuestionIntentText(raw),plain=cleanQuestionPart(intentText),time=QUESTION_TIME_MARKERS.find(marker=>raw.includes(marker))||'',timePerspective=detectTimePerspective(raw),emotion=detectEmotion(raw),safetyConcern=detectSafetyConcern(raw)
   const choice=intentText.match(/(.{1,14}?)(?:还是|或是|或者)(.{1,14}?)(?:[？?。]|$)/)
   const action=QUESTION_ACTIONS.find(word=>intentText.includes(word))||''
   let object='这件事'
@@ -431,34 +481,45 @@ function extractQuestionProfile(question='',category=classifyQuestion(question))
   for(const pattern of objectPatterns){const match=intentText.match(pattern);if(match?.[1]){object=cleanQuestionPart(match[1]);break}}
   if(object==='这件事'&&category==='career')object='当前工作处境'
   if(object==='这件事'&&category==='relationship')object='这段关系'
+  if(object==='这件事'&&category==='family')object='这段家庭关系'
+  if(object==='这件事'&&category==='life')object='当前生活状态'
   const form=choice?'choice':/(是否|要不要|该不该|能不能|可不可以|适合.{0,12}吗|吗[？?。！!]*$)/.test(raw)?'yes_no':/(何时|什么时候)/.test(raw)?'timing':/(如何|怎么|怎样)/.test(raw)?'how':/(会不会|能否成功|结果|未来)/.test(raw)?'outcome':'open'
   const alternatives=choice?[cleanQuestionPart(choice[1]),cleanQuestionPart(choice[2])]:form==='yes_no'&&action?[action,action==='离开'||action==='辞职'?'暂时留下':action==='继续'?'暂停':'不'+action]:[]
   const focus=action?`${time||'眼下'}${action}${object==='这件事'?'':object}`:plain||'当前处境'
-  const concerns={decision:'选择的成立条件、代价与退出余地',career:'职责、资源、长期消耗与替代路径',relationship:'事实互动、双方边界与一次可完成的沟通',resources:'承受上限、期限、现金流与退出条件',study:'能力阶段、方法反馈与可持续练习',wellbeing:'持续时间、消耗来源、支持系统与求助条件',general:'事实、推测、代价与可验证反馈'}
-  const evidencePrompts={decision:'哪项事实会真正改变你的选择，而不只是强化原有倾向？',career:'问题是一次波动，还是已经持续影响职责、成长或身心状态？',relationship:'哪些是已经发生的互动，哪些仍是你对对方想法的推测？',resources:'最坏情况下的损失、期限与退出方式是否已经写清？',study:'用什么具体结果判断方法有效，而不是只凭投入时长？',wellbeing:'这种状态持续多久、影响哪些日常功能，是否需要现实支持？',general:'哪一项新事实出现后，你会愿意调整当前判断？'}
-  return{raw,category,form,time,action,object,focus,alternatives,concern:concerns[category],evidencePrompt:evidencePrompts[category]}
+  const concerns={decision:'选择的成立条件、代价与退出余地',career:'职责、资源、长期消耗与替代路径',relationship:'事实互动、双方边界与一次可完成的沟通',family:'家庭角色、责任边界与彼此能提供的支持',resources:'承受上限、期限、现金流与退出条件',study:'能力阶段、方法反馈与可持续练习',wellbeing:'持续时间、消耗来源、支持系统与求助条件',life:'日常节奏、重复消耗与一个可调整的环节',general:'事实、推测、代价与可验证反馈'}
+  const evidencePrompts={decision:'哪项事实会真正改变你的选择，而不只是强化原有倾向？',career:'问题是一次波动，还是已经持续影响职责、成长或身心状态？',relationship:'哪些是已经发生的互动，哪些仍是你对对方想法的推测？',family:'哪些责任确实属于你，哪些期待需要由家人共同商量？',resources:'最坏情况下的损失、期限与退出方式是否已经写清？',study:'用什么具体结果判断方法有效，而不是只凭投入时长？',wellbeing:'这种状态持续多久、影响哪些日常功能，是否需要现实支持？',life:'哪一个日常环节最消耗你，又最适合先做小幅调整？',general:'哪一项新事实出现后，你会愿意调整当前判断？'}
+  return{raw,category,form,time,timePerspective,emotion,safetyConcern,action,object,focus,alternatives,concern:concerns[category],evidencePrompt:evidencePrompts[category]}
 }
 function questionSpecificActions(profile,rm,line){
   const action=stripTerminalPunctuation(rm.actions?.[0]||'完成一次低成本核对')
+  if(profile.safetyConcern==='crisis')return['先离开可能伤害自己的物品或环境，不要独处','立刻告诉一位可信任的人你现在需要陪伴','若危险迫近，立即联系当地紧急服务或前往最近的急诊']
+  if(profile.safetyConcern==='violence')return['先确认一个可以安全离开的地点和可信任联系人','保留必要证件与求助方式，不在危险中独自对质','若人身安全受到威胁，立即联系当地紧急服务']
+  if(profile.safetyConcern==='medical')return['记录症状、持续时间以及对日常功能的影响','向合格医疗专业人员说明实际情况，不依据卦象调整用药或治疗','若症状突然加重或出现紧急情况，立即寻求医疗帮助']
   if(profile.category==='career')return[`写下促使你考虑${profile.action||'改变'}的三项事实，并标记哪些已持续出现`,`核对${profile.action==='离开'||profile.action==='辞职'?'收入缓冲、下一步去向和交接成本':'职责、资源和可争取的支持'}`,`${action}，再设一个复核日期决定是否扩大动作`]
   if(profile.category==='relationship')return['各写一栏：已经发生的互动，以及你对对方的推测','用一句事实、一个感受和一个具体请求完成一次对话',`${action}，观察对方是否给出可核对的回应`]
+  if(profile.category==='family')return['列清各自正在承担的责任，以及尚未说出口的期待','选一个具体场景，只讨论一项边界和一项可提供的支持',`${action}，观察家人是否愿意共同调整，而不是要求一方全部承担`]
   if(profile.category==='resources')return['写清可承受损失上限、占用期限和退出条件',`先用不影响基本安排的小额度验证“${action}”`,'只有证据与退出条件同时成立时再考虑扩大']
   if(profile.category==='study')return['把目标缩成一次能在一周内得到反馈的练习',`完成“${action}”，记录错误类型而不只记录分数`,'用连续两次反馈决定保留或调整方法']
   if(profile.category==='wellbeing')return['记录状态持续时间、触发情境和对睡眠或日常功能的影响','先减少一项可避免的消耗，并联系一个现实支持者','若持续不适或影响生活，及时寻求合格专业人员帮助']
+  if(profile.category==='life')return['记录一周里最反复、最耗力的日常环节','只调整一个变量，例如时间、顺序或求助方式',`${action}，用一周后的真实感受与完成度决定是否保留`]
   return[`列出关于“${profile.focus}”的已知事实、假设和未知项`,`${action}，只验证一个最关键的未知项`,'预先写下继续与暂停各需要出现什么证据']
 }
 const QUESTION_CARD_TITLES={
   decision:['真正要选的','选项与代价','变化信号','成立条件','误判风险','选择路径','验证一步'],
   career:['当前工作位置','职责与环境','变化信号','可争取空间','离开代价','去留路径','验证行动'],
   relationship:['关系现状','互动与边界','回应信号','沟通机会','关系风险','相处路径','一次对话'],
+  family:['家庭处境','角色与边界','变化信号','支持条件','责任风险','相处路径','一次商量'],
   resources:['资源基础','投入结构','变化信号','成立条件','损失风险','进退路径','小额验证'],
   study:['当前阶段','方法与反馈','进展信号','突破机会','学习风险','练习路径','验证练习'],
   wellbeing:['当前状态','消耗与支持','变化信号','恢复条件','需要留意','节奏路径','支持行动'],
+  life:['生活底色','节奏与消耗','变化信号','调整机会','反复风险','生活路径','一周验证'],
   general:['眼下局势','关系结构','变化信号','机会','风险','发展路径','验证行动']
 }
 function directQuestionResponse(profile,result,rm,line,actions){
   const choice=profile.alternatives.length===2?`“${profile.alternatives[0]}”和“${profile.alternatives[1]}”之间`:`“${profile.focus}”`
   const seed=`${result.question}|${result.reading.id}|direct`,core=compactFocus(rm.core,29),stage=compactFocus(line.situation,28)
+  const safety=safetyGuidance(profile),reflection=supportiveReflection(profile),timeFrame=temporalGuidance(profile)
+  if(profile.safetyConcern==='crisis'||profile.safetyConcern==='violence')return joinChineseSentences(safety)
   const openings={
     choice:[`${choice}各有代价，先比${profile.concern}。`,`这不是只看哪边更顺；${choice}要放在${profile.concern}上衡量。`],
     yes_no:[`${choice}现在还不能只答“能”或“不能”。先看${profile.concern}。`,`与其急着给${choice}下结论，不如先核对${profile.concern}。`],
@@ -469,7 +530,7 @@ function directQuestionResponse(profile,result,rm,line,actions){
   }
   const opening=choose(openings[profile.form]||openings.open,seed,3)
   const bridges=[`${result.reading.name}卦的底色是“${core}”，动爻落在“${stage}”。`,`本卦所见是“${core}”；到了动爻，问题具体落在“${stage}”。`,`从${result.reading.name}卦看，${core}。动处则提醒：${stage}。`]
-  return joinChineseSentences(opening,choose(bridges,seed,11),`眼下可先${stripTerminalPunctuation(actions[0])}。`)
+  return joinChineseSentences(safety,reflection,opening,timeFrame,choose(bridges,seed,11),`眼下可先${stripTerminalPunctuation(actions[0])}。`)
 }
 function updateQuestionMode(){
   const classification=classifyQuestionDetails(el.question.value),category=typeof classification==='string'?classification:classification.category,mode=QUESTION_MODES[category],container=$('#question-mode')
@@ -517,7 +578,8 @@ function makeAnalysis(result){
   const action=stripTerminalPunctuation(choose(specificActions,seed,41))
   const highlights=[compactFocus(rm.tensions?.[0]||rm.core),compactFocus(lineModern.warning||lineModern.tension||lineModern.situation),compactFocus(action)]
   const tension=compactFocus(rm.tensions?.[0]||rm.core,26)
-  const summaries=[`眼下先看清${tension}。从“${compactFocus(action,32)}”开始；做完后再问：${profile.evidencePrompt}`,`这次观照可收在两点：别忽略${tension}，先做“${compactFocus(action,32)}”。之后用一个新事实复核原来的判断。`,`不用急着求一个终局答案。先处理${tension}，并以“${compactFocus(action,32)}”取得一次真实回应。`]
+  const perspective=profile.timePerspective==='past'?'过去只能借当下仍在重复的事实来理解':profile.timePerspective==='future'?'未来取决于条件和行动如何继续变化':''
+  const summaries=[`${perspective?perspective+'；':''}眼下先看清${tension}。从“${compactFocus(action,32)}”开始；做完后再问：${profile.evidencePrompt}`,`这次观照可收在两点：别忽略${tension}，先做“${compactFocus(action,32)}”。之后用一个新事实复核原来的判断。`,`不用急着求一个终局答案。先处理${tension}，并以“${compactFocus(action,32)}”取得一次真实回应。`]
   const derived=ensureChineseSentence(choose(summaries,seed,53))
   stages.forEach(stage=>{stage.copy=ensureChineseSentence(stage.copy)})
   return{category,profile,mode,opening:ensureChineseSentence(opening),specificActions,stages,time,action,derived,lineGuidance,highlights,root:r.theme,trend:changed?.theme||'现实反馈'}
